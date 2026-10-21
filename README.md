@@ -54,7 +54,7 @@ The Discord invite is `site.discord` in `data/bots.json`. Optional: `NEXT_PUBLIC
   "download": {
     "file": "/downloads/my-bot/my-bot-1.0.0.zip",
     "sourceDir": "bots/my-bot",
-    "github": { "repo": "LuniVex/LuniBot", "path": "my-bot", "releases": "https://github.com/LuniVex/LuniBot/releases" }
+    "github": { "repo": "LuniVex/lunibot", "path": "my-bot", "releases": "https://github.com/LuniVex/lunibot/releases" }
   }
 }
 ```
@@ -89,5 +89,5 @@ Motion uses one spring (`lib/motion.ts`), transform and opacity only, and respec
 ## Known limitations
 
 - No screenshots exist in the source; bots show a monogram.
-- "View source" and "Latest release" point at `LuniVex/LuniBot`. "Latest release" will show an empty page until you publish a release there.
+- "View source" and "Latest release" point at `LuniVex/lunibot`. "Latest release" will show an empty page until you publish a release there.
 - Neither bot has a LICENSE file (DiscMeet's `package.json` declares MIT). The About page says so.

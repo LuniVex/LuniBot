@@ -22,7 +22,7 @@
         "sqlite"
       ],
       "status": "beta",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "icon": "mail",
       "features": [
         "Two-way DM to thread bridging, including edits and deletes",
@@ -83,16 +83,16 @@
       ],
       "telemetry": "none",
       "download": {
-        "file": "/downloads/modmail/modmail-1.0.0.zip",
+        "file": "/downloads/modmail/modmail-1.0.1.zip",
         "sourceDir": "bots/modmail",
         "github": {
-          "repo": "LuniVex/LuniBot",
+          "repo": "LuniVex/lunibot",
           "path": "modmail",
-          "releases": "https://github.com/LuniVex/LuniBot/releases"
+          "releases": "https://github.com/LuniVex/lunibot/releases"
         }
       },
       "released": "2026-07-01",
-      "updated": "2026-07-08",
+      "updated": "2026-10-21",
       "license": "Not specified (no LICENSE file in the source)"
     },
     {
@@ -111,7 +111,7 @@
         "expenses"
       ],
       "status": "beta",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "icon": "mic",
       "features": [
         "Per-speaker voice recording with silence-based segmentation",
@@ -154,16 +154,16 @@
       ],
       "telemetry": "Audio and transcripts are sent to OpenAI for transcription and summarisation. The bot itself sends nothing else.",
       "download": {
-        "file": "/downloads/discmeet/discmeet-1.0.0.zip",
+        "file": "/downloads/discmeet/discmeet-1.0.1.zip",
         "sourceDir": "bots/discmeet",
         "github": {
-          "repo": "LuniVex/LuniBot",
+          "repo": "LuniVex/lunibot",
           "path": "discmeet",
-          "releases": "https://github.com/LuniVex/LuniBot/releases"
+          "releases": "https://github.com/LuniVex/lunibot/releases"
         }
       },
       "released": "2026-06-27",
-      "updated": "2026-06-27",
+      "updated": "2026-10-21",
       "license": "MIT, declared in package.json (no LICENSE file in the source)"
     }
   ]
