@@ -4,12 +4,19 @@ import { useEffect, useState } from "react";
 
 export interface Votes { count: number; voted: boolean }
 
-/** Server-backed upvote. One vote per visitor cookie; clicking again removes it. */
+type Phase = "loading" | "ready" | "busy" | "load-error" | "vote-error";
+
+/**
+ * Server-backed upvote. One vote per visitor cookie; clicking again removes it.
+ * If the API is down the control never goes blank: it stays visible and disabled with a Retry link,
+ * and a failed vote rolls back to the last count the server confirmed.
+ */
 export function VoteButton({ slug, initial }: { slug: string; initial?: Votes | null }) {
   // Precedence: the visitor's own latest action, then data passed in by the parent, then our own fetch.
   const [local, setLocal] = useState<Votes | null>(null);
   const [fetched, setFetched] = useState<Votes | null>(null);
-  const [state, setState] = useState<"idle" | "busy" | "error" | "off">("idle");
+  const [phase, setPhase] = useState<Phase>("loading");
+  const [attempt, setAttempt] = useState(0);
   const v = local ?? initial ?? fetched;
 
   useEffect(() => {
@@ -17,41 +24,52 @@ export function VoteButton({ slug, initial }: { slug: string; initial?: Votes | 
     let live = true;
     fetch(`/api/votes/${slug}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((d: Votes) => live && setFetched(d))
-      .catch(() => live && setState("off"));
+      .then((d: Votes) => { if (live) { setFetched(d); setPhase("ready"); } })
+      .catch(() => { if (live) setPhase("load-error"); });
     return () => { live = false; };
-  }, [slug, initial]);
+  }, [slug, initial, attempt]);
 
   async function toggle() {
-    if (!v || state === "busy") return;
+    if (!v || phase === "busy") return;
     const before = v;
     setLocal({ voted: !v.voted, count: v.count + (v.voted ? -1 : 1) }); // optimistic
-    setState("busy");
+    setPhase("busy");
     try {
       const r = await fetch(`/api/votes/${slug}`, { method: "POST" });
       if (!r.ok) throw new Error(String(r.status));
       setLocal(await r.json());
-      setState("idle");
+      setPhase("ready");
     } catch {
       setLocal(before);
-      setState("error");
+      setPhase("vote-error");
     }
   }
 
-  const unavailable = state === "off" || (!v && state !== "idle");
+  function retry() { setPhase("loading"); setAttempt((n) => n + 1); }
+
+  const loadFailed = !v && phase === "load-error";
   return (
     <span className="inline-flex flex-col">
-      <motion.button type="button" onClick={toggle} aria-pressed={v?.voted ?? false} disabled={!v || unavailable}
-        whileTap={{ scale: 0.96 }} whileHover={{ y: -1 }}
-        className={`inline-flex items-center gap-2 rounded-sm border px-4 py-2 text-base font-bold transition-colors disabled:opacity-50 ${v?.voted ? "border-accent text-accent" : "border-ink text-ink hover:border-accent hover:text-accent"}`}>
+      <motion.button type="button" onClick={toggle} aria-pressed={v?.voted ?? false} disabled={!v}
+        aria-busy={!v && !loadFailed} whileTap={{ scale: 0.96 }} whileHover={{ y: -1 }}
+        className={`inline-flex items-center gap-2 rounded-sm border px-4 py-2 text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${v?.voted ? "border-accent text-accent" : "border-ink text-ink enabled:hover:border-accent enabled:hover:text-accent"}`}>
         <svg viewBox="0 0 12 12" aria-hidden="true" className="size-3">
           <path d="M6 1.5 11 10H1z" fill={v?.voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" />
         </svg>
         <span>{v?.voted ? "Upvoted" : "Upvote"}</span>
-        <span className="font-mono text-sm tnum" aria-label={`${v?.count ?? 0} votes`}>{v ? v.count : "–"}</span>
+        <span className="font-mono text-sm tnum" aria-label={v ? `${v.count} votes` : "votes unavailable"}>{v ? v.count : "–"}</span>
       </motion.button>
-      {state === "error" && <span role="alert" className="mt-1 text-xs text-accent">Couldn&apos;t save your vote. Try again.</span>}
-      {unavailable && <span className="mt-1 text-xs text-muted">Votes unavailable right now.</span>}
+      {loadFailed && (
+        <span role="status" className="mt-1 text-xs text-muted">
+          Votes are unavailable right now.{" "}
+          <button type="button" onClick={retry} className="underline hover:text-accent">Retry</button>
+        </span>
+      )}
+      {phase === "vote-error" && (
+        <span role="alert" className="mt-1 text-xs text-accent">
+          Couldn&apos;t save your vote, so the count was restored. Click Upvote to try again.
+        </span>
+      )}
     </span>
   );
 }

@@ -29,8 +29,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function BotPage({ params }: { params: Promise<{ slug: string }> }) {
-  const bot = getBot((await params).slug);
-  if (!bot) notFound();
+  const { slug } = await params;
+  const bot = getBot(slug);
+  if (!bot) {
+    console.warn(`[bots/[slug]] no bot for slug "${slug}"; available: ${bots.map((b) => b.slug).join(", ")}`);
+    notFound();
+  }
   const file = getDownload(bot);
 
   const ld = {
