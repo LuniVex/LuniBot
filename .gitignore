@@ -7,7 +7,7 @@ node_modules/
 next-env.d.ts
 .DS_Store
 # Bot source lives in LuniVex/lunibot, not in this repo (kept on disk locally)
-bots/
+/bots/
 .data/
 *.pem
 *.key
