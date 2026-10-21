@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import type { Bot } from "@/lib/bots";
+import { fetchJson } from "@/lib/fetchJson";
 import { spring } from "@/lib/motion";
 import { BotCard, type CardStats } from "./BotCard";
 
@@ -14,7 +15,7 @@ export function BotGrid({ items, tags }: { items: GridItem[]; tags: string[] }) 
 
   useEffect(() => {
     let live = true;
-    fetch("/api/stats", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => live && setStats(d)).catch(() => {});
+    fetchJson<Record<string, CardStats>>("/api/stats").then((d) => live && setStats(d)).catch(() => {});
     return () => { live = false; };
   }, []);
 

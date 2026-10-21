@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { fetchJson } from "@/lib/fetchJson";
 
 export interface Votes { count: number; voted: boolean }
 
@@ -22,9 +23,8 @@ export function VoteButton({ slug, initial }: { slug: string; initial?: Votes | 
   useEffect(() => {
     if (initial) return;
     let live = true;
-    fetch(`/api/votes/${slug}`, { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((d: Votes) => { if (live) { setFetched(d); setPhase("ready"); } })
+    fetchJson<Votes>(`/api/votes/${slug}`)
+      .then((d) => { if (live) { setFetched(d); setPhase("ready"); } })
       .catch(() => { if (live) setPhase("load-error"); });
     return () => { live = false; };
   }, [slug, initial, attempt]);
@@ -35,9 +35,7 @@ export function VoteButton({ slug, initial }: { slug: string; initial?: Votes | 
     setLocal({ voted: !v.voted, count: v.count + (v.voted ? -1 : 1) }); // optimistic
     setPhase("busy");
     try {
-      const r = await fetch(`/api/votes/${slug}`, { method: "POST" });
-      if (!r.ok) throw new Error(String(r.status));
-      setLocal(await r.json());
+      setLocal(await fetchJson<Votes>(`/api/votes/${slug}`, { method: "POST" }));
       setPhase("ready");
     } catch {
       setLocal(before);

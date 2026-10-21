@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { fetchJson } from "@/lib/fetchJson";
 import { fmtDate } from "@/lib/format";
 import { spring } from "@/lib/motion";
 import { Skeleton } from "./Motion";
@@ -14,8 +15,7 @@ export function BotStats({ slug }: { slug: string }) {
 
   useEffect(() => {
     let live = true;
-    fetch(`/api/stats/${slug}`, { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+    fetchJson<{ downloads: Stats }>(`/api/stats/${slug}`)
       .then((d) => live && setS(d.downloads))
       .catch(() => live && setErr(true));
     return () => { live = false; };
