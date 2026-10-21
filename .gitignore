@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+# Bot source lives in LuniVex/lunibot, not in this repo (kept on disk locally)
+bots/
+.data/
+*.pem
+*.key
