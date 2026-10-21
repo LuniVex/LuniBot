@@ -1,3 +1,9 @@
+/**
+ * Modmail — src/index.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const config = require('./config');
 const { initialize } = require('./database/schema');

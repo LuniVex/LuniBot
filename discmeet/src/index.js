@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/index.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * DiscMeet Bot — Main Entry Point
  *
  * AI-powered Discord meeting note-taker + expense tracker.
@@ -66,6 +72,7 @@ for (const file of commandFiles) {
 client.once(Events.ClientReady, (c) => {
   logger.section('DiscMeet Bot Online');
   logger.success(`Logged in as ${c.user.tag}`);
+  logger.info('DiscMeet by LuniVex — https://github.com/LuniVex/lunibot');
   logger.info(`Commands loaded: ${client.commands.size}`);
   logger.info(`Whisper model: ${config.whisperModel}`);
   logger.info(`Summary model: ${config.summaryModel}`);

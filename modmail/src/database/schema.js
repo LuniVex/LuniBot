@@ -1,3 +1,9 @@
+/**
+ * Modmail — src/database/schema.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
 const db = require('./db');
 
 /**

@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/voice/connection.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Voice channel connection manager.
  *
  * Handles joining/leaving voice channels and managing connection lifecycle.

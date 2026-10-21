@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/config.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Configuration loader — reads .env and exports a validated, frozen config object.
  * Fails fast with clear error messages if required keys are missing.
  */

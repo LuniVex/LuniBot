@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/processing/fillerCleaner.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Filler word cleaner.
  *
  * Intelligently removes common filler words from transcribed text and

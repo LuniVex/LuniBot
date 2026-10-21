@@ -2,6 +2,7 @@
   "name": "modmail-bot",
   "version": "1.0.0",
   "description": "Production-ready Discord Modmail bot with bi-directional DM bridging, ticket management, and transcript archiving.",
+  "author": "LuniVex",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

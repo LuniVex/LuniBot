@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/transcription/whisper.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * OpenAI Whisper transcription client.
  *
  * Sends WAV audio files to the Whisper API and returns transcribed text.

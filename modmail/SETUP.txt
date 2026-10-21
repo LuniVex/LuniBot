@@ -1,0 +1,396 @@
+================================================================================
+ MODMAIL BOT — SETUP & MODIFICATION GUIDE
+================================================================================
+ Created by LuniVex  ·  https://github.com/LuniVex/lunibot
+ Please keep this credit (here, in the source-file headers, and in the startup
+ log line) when you copy, fork or modify this bot.
+================================================================================
+
+WHAT THIS BOT DOES
+------------------
+Members send the bot a direct message (DM). Each conversation becomes a public
+THREAD inside ONE tickets channel on your server. Staff reply in the thread,
+claim it, and close it. Closed tickets are saved as an HTML transcript that is
+posted to a private archive channel as a file attachment.
+
+Tech: Node.js (>= 18), discord.js v14, SQLite (better-sqlite3), dotenv.
+Entry point: src/index.js
+
+
+--------------------------------------------------------------------------------
+PART 1 — WHAT YOU NEED BEFORE YOU START
+--------------------------------------------------------------------------------
+  [ ] Node.js 18 or newer           (check: node -v)   https://nodejs.org
+  [ ] npm (installed with Node)     (check: npm -v)
+  [ ] A Discord account with the "Manage Server" permission on your server
+  [ ] Discord "Developer Mode" turned ON (needed to copy IDs):
+        Discord > User Settings > Advanced > Developer Mode
+
+better-sqlite3 is a native module. On most machines npm downloads a prebuilt
+binary. If install fails with a compile error you need build tools:
+  - macOS:   xcode-select --install
+  - Windows: install "Desktop development with C++" (Visual Studio Build Tools)
+             and Python 3
+  - Linux:   sudo apt install build-essential python3
+
+
+--------------------------------------------------------------------------------
+PART 2 — CREATE THE DISCORD APPLICATION AND BOT
+--------------------------------------------------------------------------------
+1. Go to https://discord.com/developers/applications and click "New Application".
+   Name it (for example "Modmail") and create it.
+
+2. Open the "Bot" tab on the left.
+   a. Click "Reset Token" and copy the token. This is DISCORD_TOKEN.
+      Treat it like a password. Never post it, commit it, or screenshot it.
+      If it ever leaks, click "Reset Token" again immediately.
+   b. Scroll to "Privileged Gateway Intents" and switch these ON:
+        - SERVER MEMBERS INTENT      (required)
+        - MESSAGE CONTENT INTENT     (required)
+      Click "Save Changes". Without these the bot will crash on login with
+      "Used disallowed intents" or will not see message text.
+      (The bot also uses the non-privileged Guilds, Guild Messages, Direct
+      Messages and reaction intents; those need no setting.)
+
+3. Invite the bot to your server:
+   a. Open "OAuth2" > "URL Generator".
+   b. Scopes: tick  bot  and  applications.commands
+   c. Bot permissions: tick
+        - View Channels
+        - Send Messages
+        - Send Messages in Threads
+        - Create Public Threads
+        - Manage Threads
+        - Embed Links
+        - Attach Files
+        - Read Message History
+        - Add Reactions
+   d. Copy the generated URL, open it in a browser, choose your server, and
+      authorise.
+
+
+--------------------------------------------------------------------------------
+PART 3 — PREPARE YOUR DISCORD SERVER
+--------------------------------------------------------------------------------
+1. TICKETS CHANNEL
+   Create ONE text channel for tickets (for example #modmail-tickets).
+   Staff must be able to see it. The bot must have View Channel, Send Messages,
+   Create Public Threads and Send Messages in Threads there. All ticket threads
+   are created inside this channel.
+
+2. ARCHIVE CHANNEL
+   Create a PRIVATE text channel for transcripts (for example #modmail-archive).
+   The bot needs View Channel, Send Messages, Attach Files and Embed Links there.
+
+3. STAFF ROLE
+   Create (or pick) a role for people who may run modmail commands.
+   The server owner always has access regardless of this role.
+
+4. COPY THE IDS (right-click > "Copy ID" with Developer Mode on):
+     - Server ID            -> GUILD_ID          (right-click the server icon)
+     - Tickets channel ID   -> TICKETS_CHANNEL_ID
+     - Archive channel ID   -> ARCHIVE_CHANNEL_ID
+     - Staff role ID        -> STAFF_ROLE_ID     (Server Settings > Roles >
+                                                  right-click the role)
+
+
+--------------------------------------------------------------------------------
+PART 4 — INSTALL AND CONFIGURE
+--------------------------------------------------------------------------------
+Open a terminal in this folder (the one containing package.json).
+
+1. Install dependencies:
+       npm install
+
+2. Create your environment file:
+       cp .env.example .env
+   (.env.example starts with a dot, so it is HIDDEN by default.
+    macOS Finder: press Cmd+Shift+.    Linux: Ctrl+H    Terminal: ls -a
+    VS Code shows it automatically.)
+
+3. Open .env and fill it in. No quotes, no spaces around "=":
+
+       DISCORD_TOKEN=          token from Part 2, step 2a
+       GUILD_ID=               your server ID
+       TICKETS_CHANNEL_ID=     tickets channel ID
+       ARCHIVE_CHANNEL_ID=     archive channel ID
+       STAFF_ROLE_ID=          staff role ID
+       MOD_HELP_CHANNEL_ID=    OPTIONAL. Channel that receives an alert (pinging
+                               the staff role) when a ticket is unclaimed.
+                               Can also be set in Discord with
+                               /config helpchannel.
+       DATABASE_PATH=          OPTIONAL. Leave empty to use ./data/modmail.db
+                               If set, use an ABSOLUTE path to a .db file.
+
+   NEVER commit .env. It is already listed in .gitignore.
+
+   Note: this bot does not validate .env on startup. If a value is missing you
+   will see errors such as "Tickets channel not found. Check
+   TICKETS_CHANNEL_ID in .env." — re-check the IDs if you see that.
+
+
+--------------------------------------------------------------------------------
+PART 5 — RUN IT
+--------------------------------------------------------------------------------
+Normal start:
+       npm start
+
+Development (restarts automatically when files change):
+       npm run dev
+
+What you should see in the console:
+       [Database] Schema initialized.
+       [Events] Loaded ready (once)  ... (one line per event file)
+       [Ready] Logged in as <BotName>#0000
+       [Commands] Registering 9 slash command(s)...
+       [Commands] Slash commands registered successfully.
+       [Ready] Modmail bot is online and ready.
+       [Credit] Modmail by LuniVex — https://github.com/LuniVex/lunibot
+
+Slash commands are registered to YOUR server (GUILD_ID) on every start, so they
+appear instantly. If they do not show, press Ctrl+R in Discord to reload it.
+
+The database file and its tables are created automatically on first run.
+
+
+--------------------------------------------------------------------------------
+PART 6 — TEST THE WHOLE FLOW
+--------------------------------------------------------------------------------
+Use a second Discord account (or ask a friend) that is NOT staff.
+
+1. DM the bot. It asks for a subject; reply with a first line (subject) and
+   optionally more lines (description).
+2. A new thread appears in the tickets channel, named like
+   "[OPEN - UNCLAIMED] ticket-<userid>-a", with an opening embed.
+3. As staff, type in the thread (or use /reply). The user receives it by DM.
+   Anything the user sends is relayed into the thread.
+4. Run /claim in the thread, then /unclaim, to test claiming.
+5. Run /close with a reason. A transcript is generated and posted to the
+   archive channel, and the user is notified.
+6. Run /logs user and /logs search to find the closed ticket.
+
+If staff commands answer "You do not have permission", check that the staff
+member has the role in STAFF_ROLE_ID.
+
+
+--------------------------------------------------------------------------------
+COMMAND REFERENCE
+--------------------------------------------------------------------------------
+  /close [reason]                   Close the current ticket, make a transcript
+  /claim  /unclaim                  Take or release the current ticket thread
+  /reply <message> [anonymous]      Reply in the ticket (optionally anonymous)
+  /snippet add|remove|list|use      Canned responses
+  /logs user <@user>                Past tickets for a user (paginated)
+  /logs search <query>              Full-text search across ticket messages
+  /config color|activity|emoji|helpchannel|staffrole|view
+                                    Embed colour, bot status, reaction emoji,
+                                    mod-help alert channel, staff role
+  /closeall                         EMERGENCY: force-close every open ticket
+  /help                             Built-in help embed
+
+Note: /unclaim posts an alert to the mod-help channel, so set
+MOD_HELP_CHANNEL_ID (or run /config helpchannel) before using it, otherwise it
+replies "No mod-help channel configured".
+
+Known gap: the built-in /help text may not list /claim, /unclaim or
+/closeall. See "Modifying" below if you want to add them.
+
+
+--------------------------------------------------------------------------------
+PART 7 — RUNNING IT 24/7
+--------------------------------------------------------------------------------
+OPTION A — Docker (recommended)
+  1. Make sure .env exists (Part 4).
+  2. Build and start:
+         docker compose up -d --build
+  3. Logs:        docker compose logs -f
+  4. Stop:        docker compose down
+  The database persists in ./data and transcripts in ./transcripts (both are
+  mounted as volumes). Back these folders up.
+  The compose file also publishes port 3000, but nothing listens on it any
+  more (the old web server is unused). You can safely delete the "ports:"
+  block from docker-compose.yml.
+
+OPTION B — PM2 (no Docker)
+         npm install -g pm2
+         pm2 start src/index.js --name modmail
+         pm2 save
+         pm2 startup        (follow the printed instruction)
+  Logs: pm2 logs modmail      Restart: pm2 restart modmail
+
+Run only ONE instance of the bot per token and per database file.
+
+
+--------------------------------------------------------------------------------
+PART 8 — BACKUPS
+--------------------------------------------------------------------------------
+All state lives in:
+  data/modmail.db (+ modmail.db-wal / modmail.db-shm while running)
+  transcripts/
+Stop the bot before copying the database, or copy all three db files together.
+
+
+--------------------------------------------------------------------------------
+PART 9 — TROUBLESHOOTING
+--------------------------------------------------------------------------------
+"Used disallowed intents"
+    Part 2 step 2b — enable Server Members and Message Content intents.
+
+"An invalid token was provided" / TokenInvalid
+    DISCORD_TOKEN is empty, has extra spaces/quotes, or was reset. Paste it again.
+
+Slash commands do not appear
+    Check the invite included the "applications.commands" scope, GUILD_ID is
+    the right server, and look for "[Commands] Failed to register" in the log.
+
+"Missing Access" / "Missing Permissions" when creating a ticket
+    The bot lacks Create Public Threads / Send Messages in Threads in the
+    tickets channel, or cannot view it. Fix the channel permissions.
+
+"Tickets channel not found"
+    TICKETS_CHANNEL_ID is wrong, or the bot cannot see that channel.
+
+The bot does not react to DMs
+    The user may have DMs from server members disabled, or Message Content
+    intent is off.
+
+npm install fails on better-sqlite3
+    Install the build tools listed at the top of this file, then retry.
+
+Transcript missing from archive
+    Check ARCHIVE_CHANNEL_ID and that the bot has Attach Files there.
+
+
+================================================================================
+ MODIFYING THE BOT
+================================================================================
+
+PROJECT MAP
+-----------
+  src/index.js              Creates the client, loads every file in src/events,
+                            logs in. Intents are declared here.
+  src/config.js             Reads .env into a config object.
+  src/commands/*.js         One slash command per file (auto-loaded).
+  src/commands/loader.js    Registers commands with Discord on startup.
+  src/events/*.js           One Discord event per file (auto-loaded).
+  src/handlers/             Business logic: ticketManager, messageBridge,
+                            permissions, transcriptGenerator.
+  src/database/schema.js    Tables, indexes, default config values, migrations.
+  src/database/db.js        Opens the SQLite database.
+  src/utils/                constants, letter mapper, paginator, configHelper
+                            (reads settings from the DB config table, falling
+                            back to .env), safeRename.
+
+GOLDEN RULES
+------------
+  1. Keep the credit header at the top of every file you edit, and add it to any
+     new file you create:
+         /**
+          * Modmail — src/<path>
+          * Created by LuniVex (https://github.com/LuniVex/lunibot)
+          * Please keep this credit when copying or modifying this file.
+          */
+     Also keep the "[Credit]" line in src/events/ready.js and the "author"
+     field in package.json. If you fork it, add your own line UNDER the
+     original credit instead of replacing it.
+  2. Restart the bot after every change (npm run dev does this for you).
+  3. Never put secrets in the code. New settings go in .env AND in
+     .env.example (placeholder value only) AND in this file.
+  4. Test on a separate test server and test bot token first.
+
+ADD A NEW SLASH COMMAND
+-----------------------
+  1. Create src/commands/ping.js:
+
+         const { SlashCommandBuilder } = require('discord.js');
+         const { hasPermission } = require('../handlers/permissions');
+
+         module.exports = {
+           data: new SlashCommandBuilder()
+             .setName('ping')
+             .setDescription('Check that the bot is alive'),
+
+           async execute(interaction) {
+             if (!hasPermission(interaction.member, 'ping')) {
+               return interaction.reply({
+                 content: '❌ You do not have permission to use this command.',
+                 ephemeral: true,
+               });
+             }
+             return interaction.reply({ content: 'Pong!', ephemeral: true });
+           },
+         };
+
+  2. Restart. loader.js picks up every .js file in src/commands (except
+     loader.js) that exports both "data" and "execute", and re-registers them.
+  3. Optionally add a line for it in src/commands/help.js.
+  Command name rules: lowercase, no spaces, max 32 characters. Descriptions
+  max 100 characters.
+  To REMOVE a command: delete its file and restart; the registration is
+  replaced with the remaining set.
+
+PERMISSIONS
+-----------
+  hasPermission(member, 'commandName') in src/handlers/permissions.js checks, in
+  order: server owner -> STAFF_ROLE_ID role -> per-user override -> per-role
+  override (table "permissions") -> deny.
+  Wrap every staff-only command with it. Leave it out for public commands.
+
+ADD A NEW EVENT
+---------------
+  Create src/events/<name>.js exporting { name, once?, execute }, e.g.
+       module.exports = { name: 'guildMemberRemove', async execute(member) {} };
+  index.js loads every file in that folder. If the event needs an extra
+  intent, add it to the intents array in src/index.js (and enable the matching
+  privileged intent in the Developer Portal if Discord requires it).
+
+CHANGE THE DATABASE
+-------------------
+  - Edit src/database/schema.js. CREATE TABLE IF NOT EXISTS only affects NEW
+    databases. For an existing database add a migration, following the pattern
+    already at the bottom of initialize():
+         try { db.exec('ALTER TABLE tickets ADD COLUMN my_col TEXT;'); } catch (err) {}
+  - Add default settings to the "defaults" object in schema.js; /config reads
+    and writes the "config" table.
+  - BACK UP data/modmail.db before changing the schema.
+  - Never delete data/ unless you want to lose every ticket and snippet.
+
+CHANGE LOOK AND DEFAULTS
+------------------------
+  - Colours / default emoji / default status: src/utils/constants.js and the
+    defaults in schema.js. Staff can also change them live with /config.
+  - Ticket thread naming and auto-archive time: src/handlers/ticketManager.js
+    (channelName and autoArchiveDuration — 10080 minutes = one week).
+  - Transcript appearance: src/handlers/transcriptGenerator.js.
+  - DM <-> thread relaying rules (attachments, edits, deletes):
+    src/handlers/messageBridge.js and src/events/messageCreate.js,
+    messageUpdate.js, messageDelete.js.
+
+AFTER MODIFYING
+---------------
+  1. Syntax check a file:        node --check src/commands/ping.js
+  2. Run:                        npm run dev
+  3. Exercise the flow in Part 6 on a test server.
+  4. Update this SETUP.txt and .env.example if you added settings or commands.
+  5. Bump "version" in package.json when you ship a change.
+
+UPDATING DEPENDENCIES
+---------------------
+         npm outdated
+         npm update
+  A major discord.js upgrade (v15+) can break the code. Read its migration
+  guide and test on a test server first.
+
+
+================================================================================
+ SECURITY CHECKLIST
+================================================================================
+  [ ] .env is NOT committed and NOT inside any zip you share
+  [ ] data/ and transcripts/ are NOT committed (they hold private messages)
+  [ ] Token reset immediately if it was ever exposed
+  [ ] Archive channel is private
+  [ ] Tell your members that DMs to the bot are read by staff and stored
+
+================================================================================
+ Modmail Bot — Created by LuniVex — https://github.com/LuniVex/lunibot
+================================================================================

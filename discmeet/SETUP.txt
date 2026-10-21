@@ -1,0 +1,390 @@
+================================================================================
+ DISCMEET BOT — SETUP & MODIFICATION GUIDE
+================================================================================
+ Created by LuniVex  ·  https://github.com/LuniVex/lunibot
+ Please keep this credit (here, in the source-file headers, and in the startup
+ log line) when you copy, fork or modify this bot.
+================================================================================
+
+WHAT THIS BOT DOES
+------------------
+DiscMeet is a meeting note-taker. It joins your voice channel, records each
+speaker separately, transcribes the audio with OpenAI Whisper, cleans filler
+words, and writes structured meeting notes with a GPT model. The result (notes
++ transcript file) is posted to an archive channel. It also includes a
+per-user expense tracker.
+
+Tech: Node.js (>= 18), discord.js v14, @discordjs/voice, OpenAI API, dotenv.
+Entry point: src/index.js
+
+!! PRIVACY / LEGAL — READ THIS FIRST !!
+  - This bot RECORDS VOICE. Tell everyone in the channel before you start and
+    get their consent. Recording laws differ by country and state.
+  - Audio is sent to OpenAI for transcription, and the transcript text is sent
+    to OpenAI for summarising. Check OpenAI's data policy before using it for
+    sensitive meetings.
+  - Every transcription/summary costs money on your OpenAI account.
+
+
+--------------------------------------------------------------------------------
+PART 1 — WHAT YOU NEED BEFORE YOU START
+--------------------------------------------------------------------------------
+  [ ] Node.js 18 or newer           (check: node -v)   https://nodejs.org
+  [ ] npm (installed with Node)     (check: npm -v)
+  [ ] A Discord account with "Manage Server" permission on your server
+  [ ] An OpenAI account with billing set up   https://platform.openai.com
+  [ ] Discord "Developer Mode" turned ON (to copy IDs):
+        Discord > User Settings > Advanced > Developer Mode
+
+No ffmpeg is required by the dependencies in package.json. If npm reports a
+native-compile error for an audio package, install build tools:
+  - macOS:   xcode-select --install
+  - Windows: Visual Studio Build Tools ("Desktop development with C++") + Python 3
+  - Linux:   sudo apt install build-essential python3
+
+
+--------------------------------------------------------------------------------
+PART 2 — CREATE THE DISCORD APPLICATION AND BOT
+--------------------------------------------------------------------------------
+1. Go to https://discord.com/developers/applications > "New Application".
+
+2. "General Information" tab: copy the "Application ID".
+   This is CLIENT_ID.
+
+3. "Bot" tab:
+   a. Click "Reset Token" and copy it. This is DISCORD_TOKEN.
+      Treat it like a password: never share, post or commit it.
+   b. Privileged intents are NOT needed. DiscMeet only uses the Guilds and
+      Guild Voice States intents.
+
+4. Invite the bot: "OAuth2" > "URL Generator"
+   a. Scopes: tick  bot  and  applications.commands
+   b. Bot permissions: tick
+        - View Channels
+        - Send Messages
+        - Embed Links
+        - Attach Files
+        - Read Message History
+        - Connect              (join voice)
+        - Speak                (needed to join/stay in the channel)
+        - Pin Messages         (or "Manage Messages" on older setups; the
+                                archive step pins the session header)
+        - Set Voice Channel Status   (shows "🔴 Recording" on the channel;
+                                      if missing, recording still works and
+                                      a warning is logged)
+   c. Open the generated URL, pick your server, authorise.
+
+
+--------------------------------------------------------------------------------
+PART 3 — GET YOUR OPENAI API KEY
+--------------------------------------------------------------------------------
+1. Go to https://platform.openai.com/api-keys and click "Create new secret key".
+2. Copy it once (it is shown only once). This is OPENAI_API_KEY.
+3. Add a payment method / credits under Billing and set a monthly usage limit
+   so a long meeting cannot surprise you.
+
+
+--------------------------------------------------------------------------------
+PART 4 — PREPARE YOUR DISCORD SERVER
+--------------------------------------------------------------------------------
+1. ARCHIVE / LOG CHANNEL (optional but strongly recommended)
+   Create a text channel such as #meeting-notes. The bot needs View Channel,
+   Send Messages, Embed Links, Attach Files and Pin Messages there.
+   Right-click it > Copy ID. This is LOG_CHANNEL_ID.
+   If you skip it, the archive step is disabled and results are posted in the
+   channel where you ran the command.
+
+2. VOICE CHANNEL
+   The bot needs View Channel, Connect and Speak on the voice channel you
+   will record.
+
+
+--------------------------------------------------------------------------------
+PART 5 — INSTALL AND CONFIGURE
+--------------------------------------------------------------------------------
+Open a terminal in this folder (the one containing package.json).
+
+1. Install dependencies:
+       npm install
+
+2. Create your environment file:
+       cp .env.example .env
+   (.env.example starts with a dot, so it is HIDDEN by default.
+    macOS Finder: press Cmd+Shift+.    Linux: Ctrl+H    Terminal: ls -a
+    VS Code shows it automatically.)
+
+3. Open .env and fill it in. No quotes, no spaces around "=":
+
+   REQUIRED (the bot refuses to start without these):
+       DISCORD_TOKEN=      token from Part 2, step 3a
+       CLIENT_ID=          Application ID from Part 2, step 2
+       OPENAI_API_KEY=     key from Part 3
+
+   OPTIONAL (defaults in brackets):
+       WHISPER_MODEL=whisper-1        [whisper-1]  transcription model
+       SUMMARY_MODEL=gpt-4o-mini      [gpt-4o-mini] note-writing model
+       SILENCE_DURATION=300           [300] ms of silence that ends a speech
+                                      segment. Higher = fewer, longer segments.
+       LOG_CHANNEL_ID=                [none] archive channel (Part 4)
+       IDLE_STATUS=Watching over meetings   status text when not recording
+       DEBUG=1                        [off] set any value to print debug logs
+
+   NEVER commit .env. It is listed in .gitignore.
+
+4. If a required value is missing you will see:
+       [CONFIG ERROR] Missing required environment variables: ...
+   Fix .env and start again.
+
+
+--------------------------------------------------------------------------------
+PART 6 — REGISTER THE SLASH COMMANDS (do this once)
+--------------------------------------------------------------------------------
+Commands are registered GLOBALLY, separately from starting the bot:
+
+       npm run deploy
+
+Expected output: "Successfully registered N command(s)!"
+  - Global commands can take up to ~1 hour to appear everywhere. Re-inviting
+    the bot with the applications.commands scope can make them show faster.
+  - Run this again ONLY when you add, remove or change a command definition
+    (name, description, options). Changing what a command DOES does not need it.
+
+
+--------------------------------------------------------------------------------
+PART 7 — RUN IT
+--------------------------------------------------------------------------------
+Normal start:
+       npm start
+
+Development (auto-restarts when files in src/ change):
+       npm run dev
+
+Expected console output:
+       Starting DiscMeet Bot
+       DiscMeet Bot Online
+       Logged in as <BotName>#0000
+       Commands loaded: 6
+       Whisper model: whisper-1
+       Summary model: gpt-4o-mini
+       Log channel: <id or "(not set — archive disabled)">
+       DiscMeet by LuniVex — https://github.com/LuniVex/lunibot
+
+Stop with Ctrl+C: the bot ends active sessions, clears voice channel status and
+leaves cleanly.
+
+
+--------------------------------------------------------------------------------
+PART 8 — HOW TO USE IT (AND TEST IT)
+--------------------------------------------------------------------------------
+1. Join a voice channel yourself, then run  /join
+   The bot joins, status becomes "Listening & summarising", and the channel
+   status shows "🔴 Recording".
+2. Talk (ideally with a second person/account so you can check separate
+   speakers).
+3. /status         Show current session info (duration, speakers).
+4. /summarize      End recording, transcribe, clean, summarise. Notes and the
+                   transcript file are posted to the archive channel and a
+                   short confirmation appears where you ran the command.
+                   Can take a minute or more for long meetings.
+5. /resummarize    Re-run the summary on the LAST session using cached data
+                   (handy after changing SUMMARY_MODEL or the prompt).
+6. /leave [force]  Leave the voice channel. Unsaved recordings are discarded.
+                   Use force:true to skip the confirmation.
+
+EXPENSE TRACKER (works anywhere, per user per server)
+       /expense add amount:<n> category:<text> [description:<text>]
+       /expense list [month:YYYY-MM]
+       /expense edit id:<n> [amount] [category] [description]
+       /expense remove id:<n>
+       /expense total [budget:<n>] [month:YYYY-MM]
+  Stored locally in data/expenses.json.
+
+LIMIT: Whisper accepts files up to 25 MB. A speaker's segment larger than that
+is skipped with a warning. Shorter segments (the silence setting) help.
+
+
+--------------------------------------------------------------------------------
+PART 9 — RUNNING IT 24/7
+--------------------------------------------------------------------------------
+PM2:
+         npm install -g pm2
+         pm2 start src/index.js --name discmeet
+         pm2 save
+         pm2 startup        (follow the printed instruction)
+  Logs: pm2 logs discmeet     Restart: pm2 restart discmeet
+
+Or use any VPS/service that runs Node 18+. There is no Dockerfile for this bot.
+Run only ONE instance per bot token.
+
+Folders the bot creates and writes to (all git-ignored; keep them private):
+       recordings/   temporary audio
+       cache/        last session, for /resummarize
+       notes/        generated meeting notes
+       data/         expenses.json
+Back up data/ if you care about expenses. Delete recordings/ and cache/
+periodically if disk space matters.
+
+
+--------------------------------------------------------------------------------
+PART 10 — TROUBLESHOOTING
+--------------------------------------------------------------------------------
+"[CONFIG ERROR] Missing required environment variables"
+    Fill DISCORD_TOKEN, CLIENT_ID, OPENAI_API_KEY in .env.
+
+Slash commands do not show up
+    Run npm run deploy, wait up to an hour, make sure the invite had the
+    applications.commands scope, and reload Discord (Ctrl+R).
+
+"You must be in a voice channel first!"
+    Join a voice channel, then run /join.
+
+Bot joins but records nothing / cannot hear
+    Check Connect permission and that people are not server-muted. Make sure
+    the packages installed fully (npm install, no errors). Set DEBUG=1 to see
+    detail.
+
+401 / "Incorrect API key" from OpenAI
+    OPENAI_API_KEY is wrong or has no billing/credits.
+
+429 / quota errors
+    You hit an OpenAI rate limit or ran out of credit.
+
+Voice channel status does not change
+    The bot lacks "Set Voice Channel Status". Recording still works.
+
+Archive did not appear
+    LOG_CHANNEL_ID is empty or wrong, or the bot cannot post/pin there.
+
+Transcript is empty for a speaker
+    Their segments may exceed 25 MB or contain only silence. Lower
+    SILENCE_DURATION or ask them to speak closer to the mic.
+
+
+================================================================================
+ MODIFYING THE BOT
+================================================================================
+
+PROJECT MAP
+-----------
+  src/index.js              Client, intents, command loader, interaction router,
+                            graceful shutdown. Holds the activeSessions map.
+  src/config.js             Reads and validates .env, exports a frozen config.
+  src/deploy-commands.js    Registers slash commands (npm run deploy).
+  src/commands/*.js         join, leave, stop (/summarize), status, resummarize,
+                            expense. One command per file, auto-loaded.
+                            NOTE: the file stop.js defines the command named
+                            "summarize".
+  src/voice/                connection.js (join/leave), recorder.js (per-speaker
+                            capture), session.js (session state).
+  src/audio/wavEncoder.js   Turns captured audio into WAV files.
+  src/transcription/        whisper.js (OpenAI call, 25 MB guard, retries),
+                            timedTranscript.js (merges speakers by time).
+  src/processing/           fillerCleaner.js (removes "um/uh…"),
+                            summariser.js (GPT prompt that writes the notes).
+  src/utils/                archiver.js (posts to the log channel), presence.js
+                            (status + voice channel status), sessionCache.js,
+                            logger.js, formatTime.js.
+  src/expense/store.js      Expense tracker, saved to data/expenses.json.
+
+GOLDEN RULES
+------------
+  1. Keep the credit header at the top of every file you edit, and add it to any
+     new file you create:
+         /**
+          * DiscMeet — src/<path>
+          * Created by LuniVex (https://github.com/LuniVex/lunibot)
+          * Please keep this credit when copying or modifying this file.
+          */
+     Also keep the credit log line in src/index.js and the "author" field in
+     package.json. If you fork it, add your own line UNDER the original credit
+     instead of replacing it.
+  2. Restart after changes (npm run dev does this automatically).
+  3. Never hard-code secrets. New settings go in .env, .env.example
+     (placeholder only), src/config.js and this file.
+  4. Test with a test server and a test bot token, and a low OpenAI spend limit.
+
+ADD A NEW SLASH COMMAND
+-----------------------
+  1. Create src/commands/ping.js:
+
+         const { SlashCommandBuilder } = require('discord.js');
+
+         module.exports = {
+           data: new SlashCommandBuilder()
+             .setName('ping')
+             .setDescription('Check that the bot is alive'),
+
+           // context = { activeSessions, client } from src/index.js
+           async execute(interaction, { activeSessions, client }) {
+             return interaction.reply({ content: 'Pong!', ephemeral: true });
+           },
+         };
+
+  2. Restart the bot (index.js auto-loads the file; commands missing "data" or
+     "execute" are skipped with a warning).
+  3. Run  npm run deploy  — REQUIRED so Discord learns about the new command.
+  Name rules: lowercase, no spaces, max 32 chars; description max 100 chars.
+  Errors thrown in execute() are caught by index.js and shown to the user.
+  To REMOVE a command: delete its file, then run npm run deploy again.
+  This bot has no permission system; add checks yourself, e.g.
+         if (!interaction.member.permissions.has('ManageGuild')) { ... }
+  or use .setDefaultMemberPermissions(...) on the SlashCommandBuilder.
+
+CHANGE THE AI BEHAVIOUR
+-----------------------
+  - Which models: WHISPER_MODEL and SUMMARY_MODEL in .env (no code change).
+  - How notes are written (format, sections, tone, language): the prompt in
+    src/processing/summariser.js. Test changes with /resummarize, which reuses
+    the cached session so you do not need to record again.
+  - Filler-word list: src/processing/fillerCleaner.js.
+  - How speech is split into segments: SILENCE_DURATION, plus
+    src/voice/recorder.js.
+  - Whisper retry/size logic: src/transcription/whisper.js.
+
+CHANGE WHERE OUTPUT GOES
+------------------------
+  - Archive layout (header, notes, transcript file, pinned footer):
+    src/utils/archiver.js. Needs LOG_CHANNEL_ID.
+  - Bot status text and the "🔴 Recording" channel label: src/utils/presence.js.
+    Idle text can also be changed with IDLE_STATUS in .env.
+
+CHANGE THE EXPENSE TRACKER
+--------------------------
+  - Logic and storage: src/expense/store.js (JSON file data/expenses.json).
+  - Subcommands and options: src/commands/expense.js. Changing options means
+    running npm run deploy again.
+  - For many users, consider moving to a real database instead of one JSON
+    file. Back up data/expenses.json before changing the format.
+
+AFTER MODIFYING
+---------------
+  1. Syntax check a file:        node --check src/commands/ping.js
+  2. If command definitions changed: npm run deploy
+  3. Run:                        npm run dev
+  4. Test /join > talk > /summarize on a test server.
+  5. Update this SETUP.txt and .env.example if you added settings or commands.
+  6. Bump "version" in package.json when you ship a change.
+
+UPDATING DEPENDENCIES
+---------------------
+         npm outdated
+         npm update
+  Voice libraries (@discordjs/voice, @snazzah/davey, libsodium-wrappers,
+  opusscript, prism-media) are sensitive to Discord's voice protocol changes. If
+  recording breaks after a Discord change, update these first and re-test.
+  The "openai" package is pinned to major v4; a v5+ upgrade needs code changes
+  in the whisper and summariser files.
+
+
+================================================================================
+ SECURITY CHECKLIST
+================================================================================
+  [ ] .env is NOT committed and NOT inside any zip you share
+  [ ] recordings/, cache/, notes/ and data/ are NOT committed (private content)
+  [ ] Token and OpenAI key reset immediately if ever exposed
+  [ ] OpenAI monthly spend limit set
+  [ ] Everyone in the meeting knows they are being recorded
+
+================================================================================
+ DiscMeet Bot — Created by LuniVex — https://github.com/LuniVex/lunibot
+================================================================================

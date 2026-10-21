@@ -1,3 +1,9 @@
+/**
+ * Modmail — src/utils/constants.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
 module.exports = {
   DEFAULT_EMBED_COLOR: 0x5865f2, // Discord Blurple
   DEFAULT_ACTIVITY: 'DM me for help',

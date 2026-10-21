@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/commands/stop.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * /summarize — End the recording, transcribe, clean, and generate AI meeting notes.
  *
  * Uses deferReply() since transcription + summarisation can take > 3 seconds.

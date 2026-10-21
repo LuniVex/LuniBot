@@ -1,3 +1,9 @@
+/**
+ * Modmail — src/commands/loader.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
 const fs = require('fs');
 const path = require('path');
 const { Collection, REST, Routes } = require('discord.js');

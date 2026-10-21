@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/commands/expense.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * /expense — Integrated expense tracker with 5 subcommands:
  *   add, list, edit, remove, total
  *

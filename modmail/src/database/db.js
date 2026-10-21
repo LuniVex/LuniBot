@@ -1,3 +1,9 @@
+/**
+ * Modmail — src/database/db.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');

@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/voice/session.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Meeting session state manager.
  *
  * Tracks the session lifecycle: start time, active speakers, guild/channel IDs,

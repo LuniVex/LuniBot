@@ -1,4 +1,10 @@
 /**
+ * Modmail — src/utils/safeRename.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Attempts to rename a thread. If Discord blocks due to rate limits,
  * sends a staff-only fallback message instead of crashing.
  *

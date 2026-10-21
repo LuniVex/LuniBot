@@ -1,3 +1,9 @@
+/**
+ * Modmail — src/commands/unclaim.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getTicketByChannelId, unclaimTicket } = require('../handlers/ticketManager');
 const { hasPermission } = require('../handlers/permissions');

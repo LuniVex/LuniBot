@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/processing/summariser.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * AI Summariser & Title Generator.
  *
  * Sends a cleaned transcript to GPT and generates:

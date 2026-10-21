@@ -1,3 +1,9 @@
+/**
+ * Modmail — src/events/ready.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
 const { ActivityType } = require('discord.js');
 const db = require('../database/db');
 const { loadCommands } = require('../commands/loader');
@@ -24,5 +30,6 @@ module.exports = {
     }
 
     console.log('[Ready] Modmail bot is online and ready.');
+    console.log('[Credit] Modmail by LuniVex — https://github.com/LuniVex/lunibot');
   },
 };

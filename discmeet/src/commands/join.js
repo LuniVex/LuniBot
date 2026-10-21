@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/commands/join.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * /join — Join the user's voice channel and start recording.
  *
  * Side-effects on join:

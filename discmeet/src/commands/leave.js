@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/commands/leave.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * /leave — Leave the voice channel.
  * Warns if segments exist; use force:true to discard recordings.
  *

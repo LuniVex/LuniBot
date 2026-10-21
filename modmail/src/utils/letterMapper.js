@@ -1,4 +1,10 @@
 /**
+ * Modmail — src/utils/letterMapper.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Maps a 1-based ticket count to a letter suffix.
  *   1 → 'a', 2 → 'b', ..., 26 → 'z', 27 → 'aa', 28 → 'ab', ...
  */

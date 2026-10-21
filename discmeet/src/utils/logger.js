@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/utils/logger.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Simple coloured console logger with level prefixes.
  * Uses ANSI escape codes — works in all modern terminals.
  */

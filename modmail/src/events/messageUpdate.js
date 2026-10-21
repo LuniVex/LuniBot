@@ -1,3 +1,9 @@
+/**
+ * Modmail — src/events/messageUpdate.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
 const { ChannelType } = require('discord.js');
 const { syncEdit } = require('../handlers/messageBridge');
 const config = require('../config');

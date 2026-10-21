@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/utils/sessionCache.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Session Cache Manager.
  *
  * Persists the last completed session's audio segments, transcript, and

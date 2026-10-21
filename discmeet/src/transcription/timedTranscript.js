@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/transcription/timedTranscript.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Timed transcript builder.
  *
  * Takes the meeting session's segments (each with a speaker, start time,

@@ -17,7 +17,7 @@
     "notes",
     "expenses"
   ],
-  "author": "",
+  "author": "LuniVex",
   "license": "MIT",
   "dependencies": {
     "@discordjs/voice": "^0.19.2",

@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/utils/archiver.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Session Archiver.
  *
  * Posts completed meeting sessions to a dedicated log/archive channel.

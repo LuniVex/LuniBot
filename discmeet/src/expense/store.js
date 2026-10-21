@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/expense/store.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Expense Store — JSON-file-based persistence for expense tracking.
  *
  * Stores all expenses and budgets in data/expenses.json.

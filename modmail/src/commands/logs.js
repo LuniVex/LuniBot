@@ -1,3 +1,9 @@
+/**
+ * Modmail — src/commands/logs.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { hasPermission } = require('../handlers/permissions');
 const { getUserTickets, searchTranscripts } = require('../handlers/ticketManager');

@@ -1,4 +1,10 @@
 /**
+ * DiscMeet — src/utils/presence.js
+ * Created by LuniVex (https://github.com/LuniVex/lunibot)
+ * Please keep this credit when copying or modifying this file.
+ */
+
+/**
  * Bot Presence & Voice Channel Status Manager.
  *
  * Manages the bot's rich presence (activity text) and voice channel status
