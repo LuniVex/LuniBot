@@ -1,0 +1,10 @@
+# Secrets and local config (each bot ships a .env.example instead)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and local runtime data
+node_modules/
+.DS_Store

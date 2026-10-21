@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Environment variables (contains secrets)
+.env
+
+# Temporary audio recordings
+recordings/
+
+# Session cache (for /resummarize)
+cache/
+
+# Generated meeting notes
+notes/
+
+# Expense data (user-specific)
+data/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

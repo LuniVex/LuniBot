@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Database
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Logs & Transcripts
+transcripts/
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

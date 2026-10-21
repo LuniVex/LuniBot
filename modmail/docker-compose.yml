@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  modmail:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./transcripts:/app/transcripts
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
