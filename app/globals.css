@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tokens. Light is paper/ink/oxblood; dark swaps paper and ink (design-principles D5, D10). */
+:root {
+  --paper: #f7f3ea;
+  --ink: #1a1814;
+  --accent: #a3341d;
+}
+.dark {
+  --paper: #16130f;
+  --ink: #efe9dc;
+  --accent: #e8836a;
+}
+
+@theme {
+  /* Remove Tailwind's default palette, type scale, radii and shadows so only our tokens exist (D10, D11). */
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --drop-shadow-*: initial;
+  --blur-*: initial;
+
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-accent: var(--accent);
+  --color-muted: color-mix(in srgb, var(--ink) 62%, var(--paper));
+  --color-rule: color-mix(in srgb, var(--ink) 20%, var(--paper));
+  --color-transparent: transparent;
+
+  /* Type scale, ratio 1.25 from 16px (typography T2). */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.4;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.2;
+  --text-3xl: 1.9375rem;
+  --text-3xl--line-height: 1.2;
+  --text-4xl: 2.4375rem;
+  --text-4xl--line-height: 1.2;
+
+  --radius-sm: 2px;
+
+  --font-serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-sans: var(--font-serif);
+}
+
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-serif); }
+a { text-underline-offset: 0.2em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.prose-measure { max-width: 68ch; }
+.tnum { font-variant-numeric: tabular-nums; }
