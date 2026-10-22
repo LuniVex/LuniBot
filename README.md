@@ -6,7 +6,10 @@ Stack: Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Framer Motion 
 
 ## Setup
 
+Requires Node.js 24 (pinned in `.nvmrc` and `engines`; Vercel reads the same field).
+
 ```bash
+nvm use
 npm install
 npm run dev     # http://localhost:3001
 npm run build   # production build
