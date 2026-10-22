@@ -11,8 +11,9 @@ data/bots.json    The one file you edit to add or change a bot
 scripts/          pack-bots.mjs builds the download zips
 public/downloads/ The committed zips and checksums the site serves
 app/              Routes: / (hub), /bots/[slug], /about, /api/*, sitemap, robots, OG images
-components/       BotCard, Tag, StatusBadge, DownloadPanel, Button, Section, ...
+components/       BotCard, TagList, StatusBadge, DownloadPanel, Button, Section, ...
 lib/              bots.json loader, download reader, store, stats, motion presets
+app/tokens.css    All design tokens (npm run lint:tokens checks components against them)
 skills/           Design rules (loaded through CLAUDE.md); references/ and mock/ hold style references and a static mock
 ```
 
@@ -31,7 +32,7 @@ The Discord invite is `site.discord` in `data/bots.json`. Optional: `NEXT_PUBLIC
 ## Add a new bot
 
 1. Add its source to the bots repo, and (to build its zip) put a copy at `bots/<slug>/` next to the site.
-2. Add an entry to `data/bots.json` under `bots`:
+2. Add an entry to `data/bots.json` under `bots` (the first two bots are shown as large featured cards, the rest as rows):
 
 ```json
 {

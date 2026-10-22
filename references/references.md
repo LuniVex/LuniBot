@@ -108,3 +108,26 @@ Sites whose style we're aiming at, grouped by what to steal.
 | 1px hairlines instead of shadows | 14, 15 |
 | Code and commands in monospace | 13, 16 |
 | Figures and real evidence over illustration | 11, 12 |
+
+---
+
+## Direction (committed 2026-10-22)
+
+**Warm ink-and-cream minimalism with a single accent, set like a small press catalogue.** Paper `#f7f3ea`, ink `#1a1814`, one oxblood accent `#a3341d` (dark: ink and paper swap, accent `#e8836a`). Structure from 1px rules on a visible 12-column grid; hierarchy from size and weight. Fraunces for titles, Inter for text, system mono for data.
+
+## Take-from map by technique
+
+| Technique | Take | From |
+| --- | --- | --- |
+| **Typography** | A serif display face with character paired with a plain sans for text (Fraunces + Inter) | 3 |
+| Typography | One scale, hierarchy by size and weight only | 6, 7 |
+| Typography | Short date lines, year/context stated once; tabular mono for versions and sizes | 8, 13 |
+| **Layout / grid** | Hairline rules on a visible grid, outlined buttons, no shadows | 14, 15 |
+| Layout / grid | Unequal blocks on one grid: featured items wide, the rest narrower | 14 |
+| Layout / grid | Catalogue as a ruled list of items: cover mark, title, one line, plain link | 4, 8 |
+| **Pacing** | Dense data blocks alternating with short prose; 48-64px between sections | 5, 10 |
+| Pacing | "Fig. 1" style labelled blocks on the bot page (Downloads, Commands, Requirements) | 11 |
+| Pacing | Very small amount of content with exact interaction detail | 18 |
+| **Colour** | Paper / ink / one accent; accent only for state and action | 1, 3 |
+| Colour | Near-black on warm off-white, never pure black on pure white | 1, 2 |
+| Colour | Monochrome chrome so the content carries colour | 15 |

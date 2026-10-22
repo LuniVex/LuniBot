@@ -1,34 +1,46 @@
-"use client";
-import { motion } from "framer-motion";
-import { rise, stagger } from "@/lib/motion";
 import { Button } from "./Button";
 import { Container } from "./Container";
+import { Item, Stagger } from "./Motion";
 
-/** The terminal block shows the real steps to run a bot; its lines appear one after another. */
-export function Hero({ count, sample }: { count: number; sample: { zip: string } }) {
-  const lines = [`unzip ${sample.zip}`, "cp .env.example .env", "npm ci && npm start"];
+/**
+ * Headline block (L6, L10): a large title across nine columns, then an uneven row of
+ * facts (3 cols), the pitch (5 cols) and the real run steps (4 cols).
+ */
+export function Hero({ count, runtimes, zip }: { count: number; runtimes: string; zip: string }) {
+  const steps = [`unzip ${zip}`, "cp .env.example .env", "npm ci && npm start"];
   return (
-    <section className="border-b border-rule py-12 md:py-16">
-      <Container className="grid gap-x-6 gap-y-8 md:grid-cols-12">
-        <motion.div variants={stagger(0.1)} initial="hidden" animate="show" className="md:col-span-7">
-          <motion.h1 variants={rise} className="max-w-[22ch] text-3xl font-bold md:text-4xl">Discord bots you run yourself.</motion.h1>
-          <motion.p variants={rise} className="prose-measure mt-6 text-xl">
-            {count} bots, free and open source. Download the code from this site, run it on your own machine, and invite it to your own server. No accounts, no analytics.
-          </motion.p>
-          <motion.div variants={rise} className="mt-8 flex flex-wrap gap-3">
-            <Button href="#bots">Browse bots</Button>
-            <Button href="/about" variant="outline">Safety and licensing</Button>
-          </motion.div>
-        </motion.div>
-
-        <motion.div variants={stagger(0.25)} initial="hidden" animate="show" className="md:col-span-5">
-          <p className="mb-2 text-sm text-muted">Running a bot takes three commands</p>
-          <div className="rounded-sm border border-ink p-4 font-mono text-sm">
-            {lines.map((l) => (
-              <motion.p key={l} variants={rise} className="break-all"><span className="text-muted select-none">$ </span>{l}</motion.p>
-            ))}
+    <section className="border-b border-rule pb-12 pt-12 md:pb-16 md:pt-16">
+      <Container>
+        <Stagger gap={0.08}>
+          <Item>
+            <h1 className="max-w-title font-display text-4xl font-normal md:text-6xl">Discord bots you run yourself.</h1>
+          </Item>
+          <div className="mt-12 grid gap-x-6 gap-y-8 md:grid-cols-12">
+            <Item className="md:col-span-3">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 font-mono text-xs">
+                <dt className="text-muted">Bots</dt><dd className="tabular-nums">{count}</dd>
+                <dt className="text-muted">Runs on</dt><dd>{runtimes}</dd>
+                <dt className="text-muted">Price</dt><dd>Free</dd>
+                <dt className="text-muted">Account</dt><dd>None</dd>
+              </dl>
+            </Item>
+            <Item className="md:col-span-5">
+              <p className="max-w-measure text-xl">Each bot is a Node.js program. Download the code from this page, run it on your own machine, and invite it to your own server. Nothing here runs on our servers for you.</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button href="#bots">Browse the bots</Button>
+                <Button href="/about#checking" variant="outline">How to check a download</Button>
+              </div>
+            </Item>
+            <Item className="md:col-span-4">
+              <figure>
+                <div className="border border-ink p-4 font-mono text-sm">
+                  {steps.map((l) => <p key={l} className="break-all"><span aria-hidden="true" className="select-none text-muted">$ </span>{l}</p>)}
+                </div>
+                <figcaption className="mt-2 text-sm text-muted">Fig. 1. Running any bot takes these three commands.</figcaption>
+              </figure>
+            </Item>
           </div>
-        </motion.div>
+        </Stagger>
       </Container>
     </section>
   );

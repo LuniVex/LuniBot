@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BotStats } from "@/components/BotStats";
 import { BotMark } from "@/components/BotMark";
+import { BotStats } from "@/components/BotStats";
+import { Container } from "@/components/Container";
 import { DiscordCta } from "@/components/DiscordCta";
 import { DownloadPanel } from "@/components/DownloadPanel";
 import { Item, Stagger } from "@/components/Motion";
-import { Section } from "@/components/Section";
+import { StatsProvider } from "@/components/StatsContext";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Tag } from "@/components/Tag";
-import { VoteButton } from "@/components/VoteButton";
+import { TagList } from "@/components/TagList";
+import { DownloadsCell } from "@/components/DownloadsCell";
 import { bots, getBot, site, siteUrl } from "@/lib/bots";
 import { getDownload } from "@/lib/downloads";
 import { fmtDate } from "@/lib/format";
@@ -28,6 +29,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
+/** A heading that opens a block of the reading column on a hairline (L4). */
+function Block({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-12 border-t border-rule pt-6 first:mt-0">
+      <h2 className="font-display text-2xl font-semibold">{title}</h2>
+      {note && <p className="mt-1 text-sm text-muted">{note}</p>}
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
 export default async function BotPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const bot = getBot(slug);
@@ -44,71 +56,96 @@ export default async function BotPage({ params }: { params: Promise<{ slug: stri
     downloadUrl: `${siteUrl}${bot.download.file}`,
   };
 
+  const meta: [string, React.ReactNode][] = [
+    ["Version", <span key="v">{bot.version}</span>],
+    ["Status", <StatusBadge key="s" status={bot.status} />],
+    ["First release", <span key="r">{fmtDate(bot.released)}</span>],
+    ["Latest update", <span key="u">{fmtDate(bot.updated)}</span>],
+    ["Downloads", <DownloadsCell key="d" />],
+  ];
+
   return (
-    <>
+    <StatsProvider slug={bot.slug}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />
-      <Section label={bot.name} aside={
-        <>
-          <BotMark name={bot.name} size="lg" />
-          <p className="mt-4 font-mono">v{bot.version} · <StatusBadge status={bot.status} /></p>
-          <p className="mt-1 font-mono tnum">Released {fmtDate(bot.released)}</p>
-          <p className="font-mono tnum">Updated {fmtDate(bot.updated)}</p>
-          <div className="mt-4 text-ink"><VoteButton slug={bot.slug} /></div>
-          <p className="mt-4"><Link href="/">← All bots</Link></p>
-        </>
-      }>
-        <h1 className="sr-only">{bot.name}</h1>
-        <Stagger>
-          <Item><p className="prose-measure text-xl">{bot.tagline}</p></Item>
-          <Item><p className="prose-measure mt-4">{bot.description}</p></Item>
-          <Item className="mt-4 flex flex-wrap gap-2"><Tag>{bot.language}</Tag><Tag>{bot.runtime}</Tag>{bot.tags.map((t) => <Tag key={t}>{t}</Tag>)}</Item>
-          <Item className="mt-8"><DownloadPanel bot={bot} file={file} /></Item>
-        </Stagger>
-      </Section>
 
-      <Section label="Downloads" aside="Counted on this server, once per visitor per hour.">
-        <BotStats slug={bot.slug} />
-      </Section>
+      <Container className="pt-6"><Link href="/" className="text-sm">← All bots</Link></Container>
 
-      <Section label="Features">
-        <Stagger gap={0.04}>
-          <ul className="grid gap-x-6 sm:grid-cols-2">
-            {bot.features.map((f) => (
-              <Item key={f}><li className="border-t border-rule py-3 text-base">{f}</li></Item>
+      <header className="pb-8 pt-8 md:pb-12">
+        <Container>
+          <Stagger gap={0.08}>
+            <Item><BotMark name={bot.name} size="lg" /></Item>
+            <Item><h1 className="mt-6 font-display text-5xl font-normal md:text-6xl">{bot.name}</h1></Item>
+            <Item><p className="mt-4 max-w-measure text-xl">{bot.tagline}</p></Item>
+          </Stagger>
+        </Container>
+      </header>
+
+      <div className="border-y border-rule">
+        <Container>
+          <dl className="grid grid-cols-2 md:grid-cols-5">
+            {meta.map(([k, v], i) => (
+              <div key={k} className={`py-4 ${i > 0 ? "md:border-l md:border-rule md:pl-4" : ""} ${i % 2 === 1 ? "max-md:border-l max-md:border-rule max-md:pl-4" : ""}`}>
+                <dt className="text-sm text-muted">{k}</dt>
+                <dd className="font-mono text-base tabular-nums">{v}</dd>
+              </div>
             ))}
-          </ul>
-        </Stagger>
-      </Section>
+          </dl>
+        </Container>
+      </div>
 
-      <Section label="Commands" aside="Slash commands.">
-        <table className="w-full border-collapse text-left max-md:block">
-          <thead className="max-md:sr-only"><tr><th className="border-b border-ink py-2 pr-3 text-sm font-semibold text-muted">Command</th><th className="border-b border-ink py-2 text-sm font-semibold text-muted">What it does</th></tr></thead>
-          <tbody className="max-md:block">
-            {bot.commands.map((c) => (
-              <tr key={c.name} className="max-md:block max-md:border-b max-md:border-rule max-md:py-3">
-                <td className="py-3 pr-3 align-baseline font-mono text-sm [overflow-wrap:anywhere] max-md:block max-md:py-0 md:border-b md:border-rule">{c.name}</td>
-                <td className="py-3 align-baseline max-md:block max-md:py-0 md:border-b md:border-rule">{c.description}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
+      <Container className="grid gap-x-6 gap-y-12 py-12 md:grid-cols-12 md:py-16">
+        <aside className="max-md:order-first md:col-span-4 md:col-start-9 md:row-start-1">
+          <div className="md:sticky md:top-16"><DownloadPanel bot={bot} file={file} /></div>
+        </aside>
 
-      <Section label="Requirements" aside="What you need before running it.">
-        <ul className="prose-measure list-disc pl-6">{bot.requirements.map((r) => <li key={r} className="py-1">{r}</li>)}</ul>
-        <dl className="mt-8 grid max-w-3xl gap-x-6 gap-y-3 sm:grid-cols-[11rem_1fr]">
-          <dt className="font-bold">Data and telemetry</dt>
-          <dd>{bot.telemetry === "none" ? "None. The bot sends data only to Discord." : bot.telemetry}</dd>
-          <dt className="font-bold">Licence</dt>
-          <dd>{bot.license}</dd>
-          <dt className="font-bold">Changelog</dt>
-          <dd>None yet. <a href={bot.download.github.releases} target="_blank" rel="noopener noreferrer">Release notes on GitHub</a> will appear there once published.</dd>
-        </dl>
-      </Section>
+        <div className="min-w-0 md:col-span-7 md:col-start-1 md:row-start-1">
+          <Block title="What it does">
+            <p className="max-w-measure">{bot.description}</p>
+            <p className="mt-4 font-mono text-xs text-muted">{bot.language} · {bot.runtime}</p>
+            <TagList tags={bot.tags} className="mt-1" />
+          </Block>
 
-      <Section label="Feature requests">
-        <DiscordCta url={site.discord} />
-      </Section>
-    </>
+          <Block title="Features">
+            <ul className="max-w-measure">
+              {bot.features.map((f) => <li key={f} className="border-t border-rule py-3">{f}</li>)}
+            </ul>
+          </Block>
+
+          <Block title="Commands" note="Slash commands, as registered with Discord.">
+            <table className="w-full border-collapse text-left max-md:block">
+              <thead className="max-md:sr-only"><tr><th className="border-b border-ink py-2 pr-4 text-sm font-semibold text-muted">Command</th><th className="border-b border-ink py-2 text-sm font-semibold text-muted">What it does</th></tr></thead>
+              <tbody className="max-md:block">
+                {bot.commands.map((c) => (
+                  <tr key={c.name} className="max-md:block max-md:border-b max-md:border-rule max-md:py-3">
+                    <td className="py-3 pr-4 align-baseline font-mono text-sm [overflow-wrap:anywhere] max-md:block max-md:py-0 md:border-b md:border-rule">{c.name}</td>
+                    <td className="py-3 align-baseline max-md:block max-md:py-0 md:border-b md:border-rule">{c.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Block>
+
+          <Block title="Downloads" note="Counted on this server, once per visitor per hour.">
+            <BotStats />
+          </Block>
+
+          <Block title="Before you run it">
+            <ul className="max-w-measure">
+              {bot.requirements.map((r) => <li key={r} className="border-t border-rule py-2">{r}</li>)}
+            </ul>
+            <dl className="mt-6 grid max-w-measure gap-x-6 gap-y-3 sm:grid-cols-[auto_1fr]">
+              <dt className="font-semibold">Data it sends</dt>
+              <dd>{bot.telemetry === "none" ? "None. The bot talks to Discord and nothing else." : bot.telemetry}</dd>
+              <dt className="font-semibold">Licence</dt>
+              <dd>{bot.license}</dd>
+              <dt className="font-semibold">Changelog</dt>
+              <dd>None published yet. Notes will appear in the <a href={bot.download.github.releases} target="_blank" rel="noopener noreferrer">GitHub releases</a>.</dd>
+            </dl>
+          </Block>
+        </div>
+      </Container>
+
+      <Container className="pb-16"><DiscordCta url={site.discord} /></Container>
+    </StatsProvider>
   );
 }

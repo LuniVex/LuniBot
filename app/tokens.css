@@ -1,0 +1,82 @@
+/*
+ * Design tokens: the one place values are defined (design-principles D10).
+ * Components use only these. Rule IDs in comments say where each decision comes from.
+ *
+ * Spacing (L2): Tailwind's 4px step, restricted by convention to 1, 2, 3, 4, 6, 8, 12, 16
+ *   = 4, 8, 12, 16, 24, 32, 48, 64px. Do not use 5, 7, 9, 10, 11, 14 etc. (`npm run lint:tokens` checks this).
+ * Borders (D6): 1px everywhere, so only Tailwind's plain `border` / `border-t` / `border-b` are used.
+ *   The 2px focus ring (L9) is the only exception and lives in globals.css.
+ * Radii (D7, A3): none by default; `rounded-sm` (2px) for inputs and buttons only.
+ * Motion durations and ease (M1): see lib/motion.ts; mirrored below for CSS transitions.
+ */
+
+:root {
+  /* Two neutrals plus one accent (D5; reference 3: paper / ink / one accent). */
+  --paper: #f7f3ea;
+  --ink: #1a1814;
+  --accent: #a3341d;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 160ms;
+}
+.dark {
+  --paper: #16130f;
+  --ink: #efe9dc;
+  --accent: #e8836a;
+}
+
+@theme {
+  /* Wipe Tailwind defaults so only the tokens below exist (D10, D11). */
+  --color-*: initial;
+  --text-*: initial;
+  --font-*: initial;
+  --font-weight-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --drop-shadow-*: initial;
+  --blur-*: initial;
+  --leading-*: initial;
+  --container-*: initial;
+
+  /* Colour. Muted ink and rules are mixes of the two neutrals, not new hues (D5). */
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-accent: var(--accent);
+  --color-muted: color-mix(in srgb, var(--ink) 62%, var(--paper));
+  --color-rule: color-mix(in srgb, var(--ink) 20%, var(--paper));
+  --color-tint: color-mix(in srgb, var(--ink) 5%, var(--paper));
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Type scale: 1.25 ratio from 16px (T2). 5xl and 6xl are display steps for page titles. */
+  --text-xs: 0.75rem;     --text-xs--line-height: 1.4;
+  --text-sm: 0.875rem;    --text-sm--line-height: 1.4;
+  --text-base: 1rem;      --text-base--line-height: 1.5;
+  --text-xl: 1.25rem;     --text-xl--line-height: 1.4;
+  --text-2xl: 1.5625rem;  --text-2xl--line-height: 1.2;
+  --text-3xl: 1.9375rem;  --text-3xl--line-height: 1.2;
+  --text-4xl: 2.4375rem;  --text-4xl--line-height: 1.2;
+  --text-5xl: 3.0625rem;  --text-5xl--line-height: 1.1;
+  --text-6xl: 3.8125rem;  --text-6xl--line-height: 1.1;
+
+  --leading-body: 1.5;
+  --leading-heading: 1.2;
+  --leading-small: 1.4;
+
+  /* Faces (T1, T9): Fraunces for titles, Inter for text (pairing from reference 3), system mono for data. */
+  --font-display: "Fraunces Variable", Charter, "Bitstream Charter", Cambria, Georgia, serif;
+  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Weights (T3). */
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+
+  --radius-sm: 2px;
+
+  /* Grid (L1): one max width, one 16px gutter (px-4), 12 columns. */
+  --container-page: 72rem;
+  --container-measure: 68ch;   /* T4 */
+  --container-title: 20ch;     /* display titles wrap before they sprawl */
+  --container-field: 20rem;    /* search input */
+}

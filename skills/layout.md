@@ -9,3 +9,5 @@
 - **L7 Pacing:** dense blocks (tables) alternate with short prose, separated by 48–64px. Keep vertical rhythm on the spacing scale.
 - **L8 Responsive:** columns collapse to one at ≤ 48rem; tables become stacked rows with labels. 16px minimum side gutter. No horizontal page scroll.
 - **L9 Accessibility:** visible focus ring (2px accent outline), skip link, semantic landmarks, 4.5:1 contrast for text.
+- **L10 Lead with a focal point.** The hub opens with one headline block and the featured items at a larger scale, then the catalogue (L6).
+- **L11 Unequal spans on one grid.** Featured items take 7 of 12 columns, the rest 5; the catalogue is a ruled list. Uneven by design, aligned to the same 12 columns (L1).

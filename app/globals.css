@@ -1,59 +1,39 @@
 @import "tailwindcss";
+@import "./tokens.css";
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Tokens. Light is paper/ink/oxblood; dark swaps paper and ink (design-principles D5, D10). */
-:root {
-  --paper: #f7f3ea;
-  --ink: #1a1814;
-  --accent: #a3341d;
-}
-.dark {
-  --paper: #16130f;
-  --ink: #efe9dc;
-  --accent: #e8836a;
-}
-
-@theme {
-  /* Remove Tailwind's default palette, type scale, radii and shadows so only our tokens exist (D10, D11). */
-  --color-*: initial;
-  --text-*: initial;
-  --radius-*: initial;
-  --shadow-*: initial;
-  --drop-shadow-*: initial;
-  --blur-*: initial;
-
-  --color-paper: var(--paper);
-  --color-ink: var(--ink);
-  --color-accent: var(--accent);
-  --color-muted: color-mix(in srgb, var(--ink) 62%, var(--paper));
-  --color-rule: color-mix(in srgb, var(--ink) 20%, var(--paper));
-  --color-transparent: transparent;
-
-  /* Type scale, ratio 1.25 from 16px (typography T2). */
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1.4;
-  --text-sm: 0.875rem;
-  --text-sm--line-height: 1.4;
-  --text-base: 1rem;
-  --text-base--line-height: 1.5;
-  --text-xl: 1.25rem;
-  --text-xl--line-height: 1.2;
-  --text-3xl: 1.9375rem;
-  --text-3xl--line-height: 1.2;
-  --text-4xl: 2.4375rem;
-  --text-4xl--line-height: 1.2;
-
-  --radius-sm: 2px;
-
-  --font-serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --font-sans: var(--font-serif);
+@layer base {
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 { font-family: var(--font-display); line-height: var(--leading-heading); }
+  /* T10: links are underlined and never rely on colour alone. Utilities such as `no-underline` override this. */
+  a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+  a:hover { color: var(--accent); }
+  /* L9: visible keyboard focus. */
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  ::selection { background: var(--ink); color: var(--paper); }
+  button, [role="button"], a { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
 }
 
-html { color-scheme: light; }
-html.dark { color-scheme: dark; }
-body { background: var(--paper); color: var(--ink); font-family: var(--font-serif); }
-a { text-underline-offset: 0.2em; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.prose-measure { max-width: 68ch; }
-.tnum { font-variant-numeric: tabular-nums; }
+/* M4: no motion for people who ask for none. Framer handles its own side through MotionConfig. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+@layer components {
+  /* Shared hover/focus transition: colour and transform only (M2, M6). */
+  .t-fast {
+    transition-property: color, background-color, border-color, transform, opacity;
+    transition-duration: var(--dur-fast);
+    transition-timing-function: var(--ease);
+  }
+}

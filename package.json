@@ -9,11 +9,14 @@
     "pack": "node scripts/pack-bots.mjs",
     "predev": "npm run pack",
     "prebuild": "npm run pack",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "lint:tokens": "node scripts/check-tokens.mjs"
   },
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
     "@upstash/redis": "^1.39.0",
     "fflate": "^0.8.3",
     "framer-motion": "^14.5.0",

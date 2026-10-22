@@ -15,3 +15,8 @@ If any of these appears, the work is wrong. Remove it.
 - **A11 Colour as the only hierarchy** or status signal (D4, D5).
 - **A12 Fake social proof, fake stats, fake testimonials.**
 - **A13 Card-for-everything.** Not every item needs a bordered rounded box (L4, L5).
+- **A14 Perfect symmetry and even spacing everywhere.** Every page needs one focal point and deliberate unevenness: an oversized item beside smaller ones, a wide column beside a narrow one (L3, L11).
+- **A15 Uniform 3-up card grids.** Cards of equal size in equal columns read as a template. Vary span and scale (L11).
+- **A16 Lift-and-glow hover.** Hover changes border or background, plus at most a 2px nudge or a 1.01 scale. No shadow, no glow (A2).
+- **A17 Stock imagery and decorative illustration.** Show real data or nothing (D8).
+- **A18 Bouncy default springs.** Motion uses one short custom ease, transform and opacity only, and respects `prefers-reduced-motion` (M1, M2).
