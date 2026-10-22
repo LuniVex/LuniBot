@@ -42,3 +42,18 @@ export const siteUrl = (
   process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3001")
 ).replace(/\/$/, "");
+
+/**
+ * Full link-preview tags for a page. A page's own `openGraph` replaces the site-wide one rather than
+ * merging with it, so every page builds the complete set here. The preview image comes from the
+ * route's opengraph-image file, which Next adds on its own.
+ */
+export function preview(path: string, title: string, description: string) {
+  return {
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: { type: "website" as const, siteName: site.name, locale: "en_GB", url: path, title, description },
+    twitter: { card: "summary_large_image" as const, title, description },
+  };
+}

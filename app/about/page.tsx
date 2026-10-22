@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Enter, Reveal } from "@/components/Motion";
 import { DiscordCta } from "@/components/Sections";
-import { bots, site } from "@/lib/bots";
+import { bots, preview, site } from "@/lib/bots";
 import { licenseInfo } from "@/lib/license";
 
-export const metadata: Metadata = {
-  title: "About, safety and licensing",
-  description: "What LuniBots is, what the site counts, how to check a download, and the licence of each bot.",
-  alternates: { canonical: "/about" },
-};
+export const metadata: Metadata = preview(
+  "/about",
+  "About, safety and licensing",
+  "What LuniBot is, what the site counts, how to check a download, and the licence of each bot.",
+);
 
 const code = "rounded-md bg-tile px-1.5 py-0.5 font-mono text-[0.85em]";
 
@@ -28,7 +28,7 @@ export default function About() {
   return (
     <>
       <section className="px-5 pb-8 pt-33 text-center md:pt-41">
-        <Enter><h1 className="t-hero mx-auto max-w-[16ch]">About LuniBots</h1></Enter>
+        <Enter><h1 className="t-hero mx-auto max-w-[16ch]">About LuniBot</h1></Enter>
         <Enter delay={0.08}><p className="t-lead mx-auto mt-5 max-w-[40ch] text-fg-2">What the site is, what it counts, how to check a download, and how the bots are licensed.</p></Enter>
       </section>
 

@@ -16,7 +16,7 @@ export function ogImage({ title, line, icon }: { title: string; line: string; ic
         )}
         <div style={{ display: "flex", fontSize: 92, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.05 }}>{title}</div>
         <div style={{ display: "flex", marginTop: 22, fontSize: 38, color: "#a1a1a6", maxWidth: 940, lineHeight: 1.3 }}>{line}</div>
-        <div style={{ display: "flex", marginTop: 48, fontSize: 26, color: "#86868b" }}>LuniBots · Free · GPL-3.0 · Runs on your own machine</div>
+        <div style={{ display: "flex", marginTop: 48, fontSize: 26, color: "#86868b" }}>LuniBot · Free · GPL-3.0 · Runs on your own machine</div>
       </div>
     ),
     ogSize,

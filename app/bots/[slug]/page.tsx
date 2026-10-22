@@ -8,7 +8,7 @@ import { DiscordCta } from "@/components/Sections";
 import { DownloadChart, StatsProvider, TotalDownloads } from "@/components/Stats";
 import { GetIt } from "@/components/GetIt";
 import { VoteButton } from "@/components/VoteButton";
-import { bots, getBot, siteUrl } from "@/lib/bots";
+import { bots, getBot, preview, siteUrl } from "@/lib/bots";
 import { getFile } from "@/lib/files";
 import { fmtDate, fmtSize } from "@/lib/format";
 import { licenseInfo } from "@/lib/license";
@@ -22,12 +22,8 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const bot = getBot((await params).slug);
   if (!bot) return {};
-  return {
-    title: bot.name,
-    description: `${bot.tagline} ${bot.description}`.slice(0, 200),
-    alternates: { canonical: `/bots/${bot.slug}` },
-    openGraph: { title: `${bot.name} · LuniBots`, description: bot.tagline, url: `/bots/${bot.slug}` },
-  };
+  const meta = preview(`/bots/${bot.slug}`, `${bot.name} · LuniBot`, `${bot.tagline} Free to download, ${licenseInfo(bot.license).short} licence, runs on your own machine.`);
+  return { ...meta, title: bot.name, description: `${bot.tagline} ${bot.description}`.slice(0, 200) };
 }
 
 /** A centered section heading with an optional line under it. */

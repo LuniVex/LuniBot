@@ -1,6 +1,6 @@
 import { ogImage, ogSize } from "@/lib/og";
 
-export const alt = "LuniBots: Discord bots you run yourself";
+export const alt = "LuniBot: Discord bots you run yourself";
 export const size = ogSize;
 export const contentType = "image/png";
 

@@ -5,20 +5,19 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { MotionProvider } from "@/components/Motion";
 import { ThemeProvider } from "@/components/Theme";
-import { site, siteUrl } from "@/lib/bots";
+import { preview, site, siteUrl } from "@/lib/bots";
 
 const description = "Discord bots you download and run yourself. Free, no account, source code included.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  ...preview("/", `${site.name}: Discord bots you run yourself`, description),
   title: { default: `${site.name}: Discord bots you run yourself`, template: `%s · ${site.name}` },
-  description,
-  openGraph: { type: "website", siteName: site.name, title: site.name, description },
-  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  // Also the colour of the stripe on Discord link embeds. Discord ignores pure #000000, so this is #010101 (looks identical).
+  themeColor: "#010101",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

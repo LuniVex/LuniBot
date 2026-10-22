@@ -1,4 +1,4 @@
-# LuniBots v2
+# LuniBot v2
 
 Showcase and download site for LuniVex's self-hosted Discord bots.
 
