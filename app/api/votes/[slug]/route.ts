@@ -1,31 +1,36 @@
-import { NextRequest, NextResponse } from "next/server";
-import { fail, noStore } from "../../_http";
+import { NextResponse, type NextRequest } from "next/server";
+import { getVotes, toggleVote } from "@/lib/analytics";
+import { failed, noStore, notFound } from "@/lib/api";
 import { getBot } from "@/lib/bots";
-import { getVotes, toggleVote } from "@/lib/stats";
-import { getVisitor, setVisitorCookie } from "@/lib/visitor";
+import { visitorOf, withVisitor } from "@/lib/visitor";
 
 export const dynamic = "force-dynamic";
 
-/** Toggles the visitor's vote. Same-origin requests only. */
-export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+type Ctx = { params: Promise<{ slug: string }> };
+
+export async function GET(req: NextRequest, { params }: Ctx) {
   const bot = getBot((await params).slug);
-  if (!bot) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  const origin = req.headers.get("origin");
-  if (origin && new URL(origin).host !== req.headers.get("host")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  if (!bot) return notFound();
   try {
-    const visitor = getVisitor(req);
-    const votes = await toggleVote(bot.slug, visitor.id);
-    return setVisitorCookie(NextResponse.json(votes, { headers: noStore }), visitor);
-  } catch (err) { return fail(err); }
+    const visitor = visitorOf(req);
+    return withVisitor(NextResponse.json(await getVotes(bot.slug, visitor.id), { headers: noStore }), visitor);
+  } catch (err) {
+    return failed(err);
+  }
 }
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+/** Casts or takes back this visitor's vote. Requests from other sites are refused. */
+export async function POST(req: NextRequest, { params }: Ctx) {
   const bot = getBot((await params).slug);
-  if (!bot) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!bot) return notFound();
+  const origin = req.headers.get("origin");
+  if (origin && new URL(origin).host !== req.headers.get("host")) {
+    return NextResponse.json({ error: "Votes can only be cast from this site." }, { status: 403, headers: noStore });
+  }
   try {
-    const visitor = getVisitor(req);
-    return setVisitorCookie(NextResponse.json(await getVotes(bot.slug, visitor.id), { headers: noStore }), visitor);
-  } catch (err) { return fail(err); }
+    const visitor = visitorOf(req);
+    return withVisitor(NextResponse.json(await toggleVote(bot.slug, visitor.id), { headers: noStore }), visitor);
+  } catch (err) {
+    return failed(err);
+  }
 }

@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
-import { fail, noStore } from "../../_http";
+import { NextResponse, type NextRequest } from "next/server";
+import { getDownloads } from "@/lib/analytics";
+import { failed, noStore, notFound } from "@/lib/api";
 import { getBot } from "@/lib/bots";
-import { getDownloadStats, getVotes } from "@/lib/stats";
-import { getVisitor, setVisitorCookie } from "@/lib/visitor";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+/** Total, today, last 7 and 30 days, and a 30-day daily series for one bot. */
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const bot = getBot((await params).slug);
-  if (!bot) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!bot) return notFound();
   try {
-    const visitor = getVisitor(req);
-    const [downloads, votes] = await Promise.all([getDownloadStats(bot.slug), getVotes(bot.slug, visitor.id)]);
-    return setVisitorCookie(NextResponse.json({ downloads, votes }, { headers: noStore }), visitor);
-  } catch (err) { return fail(err); }
+    return NextResponse.json(await getDownloads(bot.slug), { headers: noStore });
+  } catch (err) {
+    return failed(err);
+  }
 }

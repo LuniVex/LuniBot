@@ -1,73 +1,65 @@
 "use client";
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { fetchJson } from "@/lib/fetchJson";
+import type { Votes } from "@/lib/analytics";
+import { fetchJson } from "@/lib/fetch-json";
+import { touch } from "@/lib/motion";
 import { Count } from "./Count";
 
-export interface Votes { count: number; voted: boolean }
-
-type Phase = "loading" | "ready" | "busy" | "load-error" | "vote-error";
+type Phase = "loading" | "ready" | "saving" | "load-failed" | "save-failed";
 
 /**
- * Server-backed upvote. One vote per visitor cookie; clicking again removes it.
- * If the API is down the control never goes blank: it stays visible and disabled with a Retry link,
- * and a failed vote rolls back to the last count the server confirmed.
+ * One upvote per visitor, stored on the server; press again to take it back.
+ * Updates instantly and rolls back if the server refuses.
  */
-export function VoteButton({ slug, initial }: { slug: string; initial?: Votes | null }) {
-  // Precedence: the visitor's own latest action, then data passed in by the parent, then our own fetch.
-  const [local, setLocal] = useState<Votes | null>(null);
-  const [fetched, setFetched] = useState<Votes | null>(null);
-  const [phase, setPhase] = useState<Phase>("loading");
+export function VoteButton({ slug, initial, size = "md" }: { slug: string; initial?: Votes; size?: "md" | "lg" }) {
+  const [own, setOwn] = useState<Votes | null>(null);
+  const [loaded, setLoaded] = useState<Votes | null>(null);
+  const [phase, setPhase] = useState<Phase>(initial ? "ready" : "loading");
   const [attempt, setAttempt] = useState(0);
-  const v = local ?? initial ?? fetched;
+  const v = own ?? initial ?? loaded;
 
   useEffect(() => {
     if (initial) return;
     let live = true;
     fetchJson<Votes>(`/api/votes/${slug}`)
-      .then((d) => { if (live) { setFetched(d); setPhase("ready"); } })
-      .catch(() => { if (live) setPhase("load-error"); });
+      .then((d) => { if (live) { setLoaded(d); setPhase("ready"); } })
+      .catch(() => { if (live) setPhase("load-failed"); });
     return () => { live = false; };
   }, [slug, initial, attempt]);
 
   async function toggle() {
-    if (!v || phase === "busy") return;
+    if (!v || phase === "saving") return;
     const before = v;
-    setLocal({ voted: !v.voted, count: v.count + (v.voted ? -1 : 1) }); // optimistic
-    setPhase("busy");
+    setOwn({ voted: !v.voted, count: v.count + (v.voted ? -1 : 1) });
+    setPhase("saving");
     try {
-      setLocal(await fetchJson<Votes>(`/api/votes/${slug}`, { method: "POST" }));
+      setOwn(await fetchJson<Votes>(`/api/votes/${slug}`, { method: "POST" }));
       setPhase("ready");
     } catch {
-      setLocal(before);
-      setPhase("vote-error");
+      setOwn(before);
+      setPhase("save-failed");
     }
   }
 
-  function retry() { setPhase("loading"); setAttempt((n) => n + 1); }
-
-  const loadFailed = !v && phase === "load-error";
+  const voted = v?.voted ?? false;
   return (
-    <span className="inline-flex flex-col">
-      <button type="button" onClick={toggle} aria-pressed={v?.voted ?? false} disabled={!v}
-        aria-busy={!v && !loadFailed}
-        className={`t-fast inline-flex items-center gap-2 rounded-sm border px-4 py-2 text-base font-semibold active:translate-y-px disabled:opacity-50 ${v?.voted ? "border-accent text-accent" : "border-ink text-ink enabled:hover:border-accent enabled:hover:text-accent"}`}>
-        <svg viewBox="0 0 12 12" aria-hidden="true" className="size-3">
-          <path d="M6 1.5 11 10H1z" fill={v?.voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" />
-        </svg>
-        <span>{v?.voted ? "Upvoted" : "Upvote"}</span>
-        <span className="font-mono text-sm" aria-label={v ? `${v.count} votes` : "votes unavailable"}>{v ? <Count value={v.count} /> : "–"}</span>
-      </button>
-      {loadFailed && (
-        <span role="status" className="mt-1 text-xs text-muted">
-          Votes are unavailable right now.{" "}
-          <button type="button" onClick={retry} className="underline hover:text-accent">Retry</button>
+    <span className="inline-flex flex-col items-center gap-1">
+      <motion.button type="button" onClick={toggle} disabled={!v} aria-pressed={voted} whileTap={{ scale: 0.94 }} transition={touch}
+        className={`smooth inline-flex items-center gap-2 rounded-full border disabled:opacity-50 ${size === "lg" ? "min-h-12 px-6 text-[17px]" : "min-h-9 px-4 text-[15px]"} ${
+          voted ? "border-blue bg-blue text-white" : "border-line text-fg enabled:hover:border-fg-3"}`}>
+        <motion.svg viewBox="0 0 12 12" aria-hidden="true" className="size-3" animate={{ y: voted ? -1 : 0 }} transition={touch}>
+          <path d="M6 1.75 10.75 10H1.25z" fill={voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+        </motion.svg>
+        <span>{voted ? "Upvoted" : "Upvote"}</span>
+        <span className="opacity-70" aria-label={v ? `${v.count} votes` : "votes unavailable"}>{v ? <Count value={v.count} /> : "–"}</span>
+      </motion.button>
+      {phase === "load-failed" && (
+        <span role="status" className="t-tiny text-fg-3">
+          Votes didn&apos;t load. <button type="button" className="link" onClick={() => { setPhase("loading"); setAttempt((n) => n + 1); }}>Try again</button>
         </span>
       )}
-      {phase === "vote-error" && (
-        <span role="alert" className="mt-1 text-xs text-accent">
-          Couldn&apos;t save your vote, so the count was restored. Click Upvote to try again.
-        </span>
-      )}
+      {phase === "save-failed" && <span role="alert" className="t-tiny text-fg-3">Your vote wasn&apos;t saved. Try again.</span>}
     </span>
   );
 }

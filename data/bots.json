@@ -23,7 +23,7 @@
       ],
       "status": "beta",
       "version": "1.0.1",
-      "icon": "mail",
+      "icon": "shield-chat",
       "features": [
         "Two-way DM to thread bridging, including edits and deletes",
         "Claim and unclaim tickets, with alerts to a mod-help channel",
@@ -93,7 +93,7 @@
       },
       "released": "2026-07-01",
       "updated": "2026-10-21",
-      "license": "Not specified (no LICENSE file in the source)"
+      "license": "GPL-3.0-only"
     },
     {
       "name": "DiscMeet",
@@ -112,7 +112,7 @@
       ],
       "status": "beta",
       "version": "1.0.1",
-      "icon": "mic",
+      "icon": "notebook",
       "features": [
         "Per-speaker voice recording with silence-based segmentation",
         "Transcription via OpenAI Whisper",
@@ -164,7 +164,7 @@
       },
       "released": "2026-06-27",
       "updated": "2026-10-21",
-      "license": "MIT, declared in package.json (no LICENSE file in the source)"
+      "license": "GPL-3.0-only"
     }
   ]
 }

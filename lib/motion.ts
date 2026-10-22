@@ -1,22 +1,27 @@
 import type { Transition, Variants } from "framer-motion";
 
 /**
- * Motion system (skills/motion.md). One ease, short durations, transform and opacity only.
- * Mirrored in tokens.css (--ease, --dur-fast) for CSS transitions.
+ * One motion language for the whole site: long, soft eases for fades and reveals,
+ * smooth springs (no overshoot) for anything that moves in response to the user.
  */
-export const ease = [0.22, 1, 0.36, 1] as const;
-export const dur = { fast: 0.16, base: 0.32, layout: 0.4 } as const;
+export const ease = [0.28, 0.11, 0.32, 1] as const;
+export const easeCss = `cubic-bezier(${ease.join(", ")})`;
 
-export const tFast: Transition = { duration: dur.fast, ease };
-export const tBase: Transition = { duration: dur.base, ease };
-export const tLayout: Transition = { duration: dur.layout, ease };
+/** Reveals, layout moves and shared highlights. */
+export const glide: Transition = { type: "spring", stiffness: 140, damping: 26, mass: 1 };
+/** Hover and press feedback. */
+export const touch: Transition = { type: "spring", stiffness: 320, damping: 32, mass: 0.9 };
 
-export const stagger = (gap = 0.06): Variants => ({
-  hidden: {},
-  show: { transition: { staggerChildren: gap } },
+export const fadeUp = (delay = 0): Transition => ({
+  opacity: { duration: 0.9, ease, delay },
+  filter: { duration: 0.9, ease, delay },
+  y: { ...glide, delay },
+  scale: { ...glide, delay },
 });
 
+export const stagger = (gap = 0.08, delay = 0): Variants => ({ hidden: {}, show: { transition: { staggerChildren: gap, delayChildren: delay } } });
+
 export const rise: Variants = {
-  hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: tBase },
+  hidden: { opacity: 0, y: 28, filter: "blur(6px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: fadeUp() },
 };

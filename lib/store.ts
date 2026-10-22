@@ -4,109 +4,99 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 /**
- * Persistence for download counts and votes.
+ * The datastore behind download counts and votes.
  *
- * Production: Upstash Redis (Vercel Marketplace). Vercel KV and Vercel Postgres are no longer sold
- * directly; the Upstash integration injects KV_REST_API_URL / KV_REST_API_TOKEN.
- * Local dev / self-hosting: a JSON file at .data/store.json, written by the server, so numbers
- * still persist across restarts. On Vercel the filesystem is ephemeral, so without Redis the
- * store refuses to run instead of silently losing data.
+ * Production: Upstash Redis, added on Vercel under Storage > Marketplace. It injects
+ * KV_REST_API_URL and KV_REST_API_TOKEN (UPSTASH_REDIS_REST_* also work).
+ * Local development: a JSON file at .data/store.json, so numbers survive restarts.
+ * On Vercel the filesystem is thrown away between requests, so there the file store is refused
+ * and the API answers 503 with a setup message instead of quietly losing data.
  */
 export interface Store {
-  /** Increment a counter, optionally setting its expiry in seconds the first time. */
-  incr(key: string, ttlSeconds?: number): Promise<number>;
-  getNumbers(keys: string[]): Promise<number[]>;
-  /** True if the key was created now; false if it already existed. */
-  setIfAbsent(key: string, ttlSeconds: number): Promise<boolean>;
-  hasMember(key: string, member: string): Promise<boolean>;
-  addMember(key: string, member: string): Promise<void>;
-  removeMember(key: string, member: string): Promise<void>;
-  countMembers(key: string): Promise<number>;
+  /** Adds 1 and returns the new value. `ttl` (seconds) is set when the key is created. */
+  incr(key: string, ttl?: number): Promise<number>;
+  /** Numbers for many keys at once; missing keys read as 0. */
+  read(keys: string[]): Promise<number[]>;
+  /** Creates the key if it doesn't exist. True if it was created now. */
+  claim(key: string, ttl: number): Promise<boolean>;
+  setHas(key: string, member: string): Promise<boolean>;
+  setAdd(key: string, member: string): Promise<void>;
+  setRemove(key: string, member: string): Promise<void>;
+  setSize(key: string): Promise<number>;
 }
 
-export class StoreUnavailable extends Error {}
+export class StoreNotConfigured extends Error {}
 
-// ---------- Redis ----------
-function redisStore(redis: Redis): Store {
+function redis(client: Redis): Store {
   return {
     async incr(key, ttl) {
-      const n = await redis.incr(key);
-      if (ttl && n === 1) await redis.expire(key, ttl);
+      const n = await client.incr(key);
+      if (ttl && n === 1) await client.expire(key, ttl);
       return n;
     },
-    async getNumbers(keys) {
-      if (!keys.length) return [];
-      const vals = await redis.mget<(number | null)[]>(...keys);
-      return vals.map((v) => Number(v ?? 0));
+    async read(keys) {
+      if (keys.length === 0) return [];
+      const values = await client.mget<(number | string | null)[]>(...keys);
+      return values.map((v) => Number(v ?? 0));
     },
-    async setIfAbsent(key, ttl) {
-      return (await redis.set(key, 1, { nx: true, ex: ttl })) === "OK";
-    },
-    async hasMember(key, m) { return (await redis.sismember(key, m)) === 1; },
-    async addMember(key, m) { await redis.sadd(key, m); },
-    async removeMember(key, m) { await redis.srem(key, m); },
-    async countMembers(key) { return redis.scard(key); },
+    async claim(key, ttl) { return (await client.set(key, 1, { nx: true, ex: ttl })) === "OK"; },
+    async setHas(key, m) { return (await client.sismember(key, m)) === 1; },
+    async setAdd(key, m) { await client.sadd(key, m); },
+    async setRemove(key, m) { await client.srem(key, m); },
+    async setSize(key) { return client.scard(key); },
   };
 }
 
-// ---------- File (dev / single-server) ----------
-interface FileData { counters: Record<string, number>; sets: Record<string, string[]>; expires: Record<string, number> }
+interface FileData { n: Record<string, number>; sets: Record<string, string[]>; exp: Record<string, number> }
 
-function fileStore(path: string): Store {
-  let data: FileData | null = null;
-  let chain: Promise<unknown> = Promise.resolve(); // serialises read-modify-write within this process
-
+function file(path: string): Store {
+  let queue: Promise<unknown> = Promise.resolve();
   const load = (): FileData => {
-    if (data) return data;
-    try { data = JSON.parse(readFileSync(path, "utf8")); } catch { data = { counters: {}, sets: {}, expires: {} }; }
-    return data!;
+    try { return JSON.parse(readFileSync(path, "utf8")) as FileData; } catch { return { n: {}, sets: {}, exp: {} }; }
   };
-  const save = () => {
+  const save = (d: FileData) => {
     mkdirSync(dirname(path), { recursive: true });
-    const tmp = `${path}.tmp`;
-    writeFileSync(tmp, JSON.stringify(data));
-    renameSync(tmp, path);
+    writeFileSync(`${path}.tmp`, JSON.stringify(d));
+    renameSync(`${path}.tmp`, path);
   };
-  const live = (d: FileData, key: string) => {
-    const exp = d.expires[key];
-    if (exp && exp < Date.now()) { delete d.counters[key]; delete d.expires[key]; }
+  const expire = (d: FileData, key: string) => {
+    if (d.exp[key] && d.exp[key] < Date.now()) { delete d.n[key]; delete d.exp[key]; }
   };
-  const run = <T,>(fn: (d: FileData) => T): Promise<T> => {
-    const next = chain.then(() => { const d = load(); const out = fn(d); save(); return out; });
-    chain = next.catch(() => undefined);
+  // One operation at a time, so concurrent requests can't overwrite each other's writes.
+  const run = <T,>(op: (d: FileData) => T): Promise<T> => {
+    const next = queue.then(() => { const d = load(); const out = op(d); save(d); return out; });
+    queue = next.catch(() => undefined);
     return next;
   };
-
   return {
     incr: (key, ttl) => run((d) => {
-      live(d, key);
-      d.counters[key] = (d.counters[key] ?? 0) + 1;
-      if (ttl && d.counters[key] === 1) d.expires[key] = Date.now() + ttl * 1000;
-      return d.counters[key];
+      expire(d, key);
+      d.n[key] = (d.n[key] ?? 0) + 1;
+      if (ttl && d.n[key] === 1) d.exp[key] = Date.now() + ttl * 1000;
+      return d.n[key];
     }),
-    getNumbers: (keys) => run((d) => keys.map((k) => { live(d, k); return d.counters[k] ?? 0; })),
-    setIfAbsent: (key, ttl) => run((d) => {
-      live(d, key);
-      if (key in d.counters) return false;
-      d.counters[key] = 1; d.expires[key] = Date.now() + ttl * 1000;
+    read: (keys) => run((d) => keys.map((k) => { expire(d, k); return d.n[k] ?? 0; })),
+    claim: (key, ttl) => run((d) => {
+      expire(d, key);
+      if (key in d.n) return false;
+      d.n[key] = 1;
+      d.exp[key] = Date.now() + ttl * 1000;
       return true;
     }),
-    hasMember: (key, m) => run((d) => (d.sets[key] ?? []).includes(m)),
-    addMember: (key, m) => run((d) => { const s = new Set(d.sets[key] ?? []); s.add(m); d.sets[key] = [...s]; }),
-    removeMember: (key, m) => run((d) => { d.sets[key] = (d.sets[key] ?? []).filter((x) => x !== m); }),
-    countMembers: (key) => run((d) => (d.sets[key] ?? []).length),
+    setHas: (key, m) => run((d) => (d.sets[key] ?? []).includes(m)),
+    setAdd: (key, m) => run((d) => { d.sets[key] = [...new Set([...(d.sets[key] ?? []), m])]; }),
+    setRemove: (key, m) => run((d) => { d.sets[key] = (d.sets[key] ?? []).filter((x) => x !== m); }),
+    setSize: (key) => run((d) => (d.sets[key] ?? []).length),
   };
 }
 
-let cached: Store | null = null;
+let store: Store | null = null;
 
 export function getStore(): Store {
-  if (cached) return cached;
+  if (store) return store;
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (url && token) return (cached = redisStore(new Redis({ url, token })));
-  if (process.env.VERCEL) {
-    throw new StoreUnavailable("No Redis connected. Add the Upstash Redis integration in Vercel > Storage.");
-  }
-  return (cached = fileStore(join(process.cwd(), ".data", "store.json")));
+  if (url && token) return (store = redis(new Redis({ url, token })));
+  if (process.env.VERCEL) throw new StoreNotConfigured("No datastore connected. Add Upstash for Redis in Vercel > Storage.");
+  return (store = file(join(process.cwd(), ".data", "store.json")));
 }

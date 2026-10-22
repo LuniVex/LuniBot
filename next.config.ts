@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  // Hides the Next.js dev-tools badge that floats in the bottom-left corner while running `next dev`.
+  // The dev-tools badge floats in a corner while `next dev` runs (anti-patterns A5).
   devIndicators: false,
 };
 

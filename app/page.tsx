@@ -1,27 +1,30 @@
-import { BotGrid } from "@/components/BotGrid";
-import { Container } from "@/components/Container";
-import { DiscordCta } from "@/components/DiscordCta";
+import { BotGallery } from "@/components/BotGallery";
+import { Reveal } from "@/components/Motion";
+import { DiscordCta, Facts, HowItWorks } from "@/components/Sections";
 import { Hero } from "@/components/Hero";
-import { Section } from "@/components/Section";
-import { allTags, bots, site } from "@/lib/bots";
-import { getDownload } from "@/lib/downloads";
+import { allTags, bots } from "@/lib/bots";
+import { getFile } from "@/lib/files";
 import { fmtSize } from "@/lib/format";
 
-export default function Home() {
-  const items = bots.map((bot) => {
-    const f = getDownload(bot);
-    return { bot, size: f ? fmtSize(f.size) : "n/a" };
+export default function Hub() {
+  const entries = bots.map((bot) => {
+    const file = getFile(bot);
+    return { bot, size: file ? fmtSize(file.size) : "no file" };
   });
-  const runtimes = [...new Set(bots.map((b) => b.runtime))].join(", ");
+  const zip = bots[0]?.download.file.split("/").pop() ?? "bot.zip";
+
   return (
     <>
-      <Hero count={bots.length} runtimes={runtimes} zip={bots[0].download.file.split("/").pop()!} />
-      <section id="bots" aria-labelledby="bots-h" className="scroll-mt-16 border-b border-rule py-12 md:py-16">
-        <Container><BotGrid items={items} tags={allTags()} /></Container>
+      <Hero zip={zip} />
+      <section id="bots" className="scroll-mt-14 px-5 pb-24 md:pb-32">
+        <div className="mx-auto max-w-page">
+          <Reveal className="mb-10 text-center"><h2 className="t-section">Meet the bots.</h2></Reveal>
+          <BotGallery entries={entries} tags={allTags()} />
+        </div>
       </section>
-      <Section label="Feature requests" aside="Tell us what to build next.">
-        <DiscordCta url={site.discord} />
-      </Section>
+      <Facts count={bots.length} runtime={bots[0]?.runtime ?? "Node.js 18+"} />
+      <HowItWorks zip={zip} />
+      <DiscordCta />
     </>
   );
 }

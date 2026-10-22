@@ -1,57 +1,66 @@
-# Lunibot website
+# LuniBots
 
-The website for the [lunibot](https://github.com/LuniVex/lunibot) bots: a showcase and download site for a collection of self-hosted Discord bots. Each bot has its own page and its own download, served from this site. GitHub source and releases are offered as a secondary link.
+Showcase and download site for LuniVex's self-hosted Discord bots. Each bot has its own page, its own download served from this site, live download counts and upvotes.
 
-Stack: Next.js (App Router) · TypeScript · Tailwind CSS v4 · Framer Motion · deploy-ready for Vercel.
-
-## Layout
-
-```
-data/bots.json    The one file you edit to add or change a bot
-scripts/          pack-bots.mjs builds the download zips
-public/downloads/ The committed zips and checksums the site serves
-app/              Routes: / (hub), /bots/[slug], /about, /api/*, sitemap, robots, OG images
-components/       BotCard, TagList, StatusBadge, DownloadPanel, Button, Section, ...
-lib/              bots.json loader, download reader, store, stats, motion presets
-app/tokens.css    All design tokens (npm run lint:tokens checks components against them)
-skills/           Design rules (loaded through CLAUDE.md); references/ and mock/ hold style references and a static mock
-```
-
-The bot source code is **not in this repo**. It lives in [LuniVex/lunibot](https://github.com/LuniVex/lunibot). `npm run pack` rebuilds the zips only when a `bots/<slug>/` folder sits next to the site (for example a local checkout of that repo); otherwise it keeps the committed zips.
+Stack: Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Framer Motion · Upstash Redis. Ready for Vercel.
 
 ## Setup
 
 ```bash
 npm install
-npm run dev                  # http://localhost:3000 (builds the zips first)
-npm run build && npm start   # production check
+npm run dev     # http://localhost:3001
+npm run build   # production build
+npm run lint
 ```
 
-The Discord invite is `site.discord` in `data/bots.json`. Optional: `NEXT_PUBLIC_SITE_URL` sets the canonical URL for OpenGraph/sitemap/robots. On Vercel, `VERCEL_PROJECT_PRODUCTION_URL` is used automatically. Deploy by importing the repo in Vercel; `vercel.json` only adds security headers.
+Copy `.env.example` to `.env.local` if you need to set anything locally. Nothing is required for local development: download counts and votes are written to `.data/store.json`.
 
-## Add a new bot
+### Deploying to Vercel
 
-1. Add its source to the bots repo, and (to build its zip) put a copy at `bots/<slug>/` next to the site.
-2. Add an entry to `data/bots.json` under `bots` (the first two bots are shown as large featured cards, the rest as rows):
+1. Import the repository in Vercel.
+2. In the project, open **Storage** and add **Upstash for Redis** from the Marketplace. Vercel then sets `KV_REST_API_URL` and `KV_REST_API_TOKEN` for you.
+3. Optionally set `NEXT_PUBLIC_SITE_URL` to the site's public address (used for sitemap, robots and link previews).
+
+Without Redis connected, the site still works and downloads still work, but the stats and vote endpoints answer `503` with a message saying Redis is missing. They refuse rather than writing to Vercel's temporary filesystem and losing the numbers.
+
+## Layout
+
+```
+data/bots.json          Every bot. The one file to edit when adding or changing a bot.
+public/downloads/       The zips the site serves, each with a .sha256 checksum file next to it
+public/icons/           Bot logos: white line drawings on transparency, named after the bot's `icon`
+app/                    Pages (/, /bots/[slug], /about, 404) and API routes (/api/*)
+components/             UI components
+lib/                    Data loading, datastore, analytics, formatting, motion settings
+scripts/checksums.mjs   Writes the .sha256 files for the zips
+```
+
+## Adding a bot
+
+1. Put the zip at `public/downloads/<slug>/<slug>-<version>.zip`. Include the bot's `LICENSE` file in it.
+2. Run `npm run checksums` to write its `.sha256` file.
+3. Add the logo as `public/icons/<icon>.png`: a white drawing on a transparent background, roughly square. Then add its two colours to the `icons` map in `components/AppIcon.tsx`. Skip this step and the bot shows its first letter instead.
+4. Add an entry to `data/bots.json`:
 
 ```json
 {
   "name": "My Bot",
   "slug": "my-bot",
-  "tagline": "One line shown on the card.",
-  "description": "Longer description for the bot page.",
-  "language": "TypeScript",
-  "runtime": "Node.js 20+",
+  "tagline": "One line shown on the tile.",
+  "description": "A few sentences for the bot's page. The first sentence is shown darker than the rest.",
+  "language": "JavaScript",
+  "runtime": "Node.js 18+",
   "tags": ["discord", "music"],
-  "status": "active",
+  "status": "beta",
   "version": "1.0.0",
-  "released": "2026-10-21",
-  "updated": "2026-10-21",
-  "license": "MIT",
+  "icon": "my-icon",
   "features": ["..."],
   "commands": [{ "name": "/play <song>", "description": "..." }],
-  "requirements": ["..."],
+  "requirements": ["Node.js 18+", "Discord bot token"],
   "telemetry": "none",
+  "released": "2026-10-21",
+  "updated": "2026-10-21",
+  "license": "GPL-3.0-only",
   "download": {
     "file": "/downloads/my-bot/my-bot-1.0.0.zip",
     "sourceDir": "bots/my-bot",
@@ -60,35 +69,25 @@ The Discord invite is `site.discord` in `data/bots.json`. Optional: `NEXT_PUBLIC
 }
 ```
 
-`status` is `active`, `beta` or `archived`. `telemetry` is `"none"` or a sentence about where data goes. `released` is "First released" and `updated` is "Last updated". Bump `version` and `updated` when you change a bot, and the zip name should follow the version.
+`status` is `active`, `beta` or `archived`. `telemetry` is `"none"` or a sentence saying what leaves the user's machine. `license` is an SPDX ID; `GPL-3.0-only` and `MIT` get a full name and link (see `lib/license.ts`). Bots appear on the hub in the order they appear in this file.
 
-## How downloads are hosted
+## How downloads and analytics work
 
-- `npm run pack` (runs automatically before `dev` and `build`) zips each bot's `sourceDir` into `public/downloads/<slug>/<slug>-<version>.zip` and writes a `.sha256` file next to it. Next.js serves `public/` as static files, so the download button is a plain link to `/downloads/...`.
-- Excluded from every zip: `node_modules`, `.env`, `.git`, `data`, `transcripts`, `recordings`, `notes`, `cache`, logs.
-- Zip timestamps are fixed, so the same source always produces the same checksum.
-- Size comes from the file at build time, the checksum from the `.sha256` file, version and last-updated from `bots.json`.
-- `public/downloads/` is committed. This repo does not contain `bots/`, so on a fresh clone or on Vercel `npm run pack` finds no source folder and keeps the committed zips. With `bots/` present next to the site, it rebuilds them. After changing a bot, rebuild and commit the new zip.
+- The Download buttons point to `/api/download/<slug>`. That route counts the download, then redirects to the zip in `public/downloads`. Files are always served from this site, never from GitHub; the GitHub links on each bot page are a secondary way to view the source.
+- A download counts at most once per hour per visitor. Search engines and link-preview crawlers are not counted. If the datastore is down, the download still goes through, it just isn't counted.
+- For each bot the datastore keeps an all-time total and one counter per day (kept for about 13 months). The bot page shows today, the last 7 and 30 days, and a 30-day chart.
+- Upvotes: one per visitor per bot, and pressing again removes it. Votes from other websites are refused.
+- Visitors are told apart by a single anonymous, httpOnly cookie (`lb_vid`) holding a random ID. There is no other tracking.
 
-## Download counts and upvotes (server-side)
+API routes:
 
-Counts live on the server, so they are shared by all visitors and survive deploys.
+| Route | Method | Returns |
+| --- | --- | --- |
+| `/api/download/[slug]` | GET | Counts the download, redirects to the zip |
+| `/api/stats` | GET | Downloads total and votes for every bot (used by the hub) |
+| `/api/stats/[slug]` | GET | Total, today, last 7 and 30 days, and the daily series |
+| `/api/votes/[slug]` | GET, POST | The vote count and whether this visitor voted; POST toggles the vote |
 
-- **Production store: Upstash Redis.** Vercel KV and Vercel Postgres are no longer offered directly; Redis now comes from the Vercel Marketplace. In your Vercel project open **Storage > Create > Upstash Redis** and connect it. Vercel injects `KV_REST_API_URL` and `KV_REST_API_TOKEN`; no code change is needed. Until you do, the stats/vote routes return 503 on Vercel and the UI shows "unavailable" instead of fake numbers.
-- **Local dev:** with no Redis variables set, a JSON file at `.data/store.json` (git-ignored) is used, written by the server, so numbers persist across restarts. This is not for Vercel, whose filesystem is ephemeral.
-- **Downloads:** buttons link to `/api/download/<slug>`, which counts the request and redirects (302) to the file in `public/downloads/`. One download per visitor per bot per hour is counted, and crawler user agents are ignored. Anyone who opens `/downloads/...` directly bypasses the count.
-- **Upvotes:** `POST /api/votes/<slug>` toggles the visitor's vote. A visitor is an anonymous random ID in an httpOnly cookie (`lb_vid`, one year). Clearing cookies lets someone vote again; without accounts that cannot be prevented.
-- **Routes:** `GET /api/stats` (hub summary), `GET /api/stats/<slug>` (totals + 30-day series + votes), `GET|POST /api/votes/<slug>`, `GET /api/download/<slug>`.
-- **Dates:** "First released" is `released` in `data/bots.json` and "Last updated" is `updated`. No formal releases exist yet, so `released` is the date of each bot's first commit in the source repo (Modmail 2026-07-01, DiscMeet 2026-06-27). Edit them if you want a different meaning.
+## Licence
 
-## Design and motion
-
-Rules live in `skills/` and are loaded through `CLAUDE.md`. Tokens (paper/ink/accent colours, the 1.25 type scale, 2px radius, 1px borders) are in `app/globals.css`, and Tailwind's default palette, shadows and radii are removed so only tokens exist.
-
-Motion uses one spring (`lib/motion.ts`), transform and opacity only, and respects `prefers-reduced-motion`. Route changes animate in through `app/template.tsx` (enter transitions only; the App Router does not support exit animations without hacks). Loading skeletons are in `app/loading.tsx` and `app/bots/[slug]/loading.tsx`.
-
-## Known limitations
-
-- No screenshots exist in the source; bots show a monogram.
-- "View source" and "Latest release" point at `LuniVex/lunibot`. "Latest release" will show an empty page until you publish a release there.
-- Neither bot has a LICENSE file (DiscMeet's `package.json` declares MIT). The About page says so.
+Every bot is released under the GNU General Public License v3.0 (`GPL-3.0-only`). Each zip contains the full text in its `LICENSE` file.
