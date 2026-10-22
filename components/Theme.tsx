@@ -6,7 +6,7 @@ import { flushSync } from "react-dom";
 import { easeCss } from "@/lib/motion";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  return <NextThemes attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>{children}</NextThemes>;
+  return <NextThemes attribute="class" defaultTheme="dark" enableSystem={false} storageKey="lunibots-theme" disableTransitionOnChange>{children}</NextThemes>;
 }
 
 type StartViewTransition = (update: () => void) => { ready: Promise<void> };

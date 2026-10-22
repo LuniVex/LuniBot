@@ -13,7 +13,7 @@ export interface Bot {
   tags: string[];
   status: BotStatus;
   version: string;
-  /** Icon name: a white line drawing at public/icons/<icon>.png (see components/AppIcon.tsx). Unknown names show the first letter. */
+  /** Logo name, drawn in components/AppIcon.tsx ("mail-bubble", "voice-notes"). Unknown names show the first letter. */
   icon: string;
   features: string[];
   commands: { name: string; description: string }[];

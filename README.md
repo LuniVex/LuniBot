@@ -28,7 +28,6 @@ Without Redis connected, the site still works and downloads still work, but the 
 ```
 data/bots.json          Every bot. The one file to edit when adding or changing a bot.
 public/downloads/       The zips the site serves, each with a .sha256 checksum file next to it
-public/icons/           Bot logos: white line drawings on transparency, named after the bot's `icon`
 app/                    Pages (/, /bots/[slug], /about, 404) and API routes (/api/*)
 components/             UI components
 lib/                    Data loading, datastore, analytics, formatting, motion settings
@@ -39,7 +38,7 @@ scripts/checksums.mjs   Writes the .sha256 files for the zips
 
 1. Put the zip at `public/downloads/<slug>/<slug>-<version>.zip`. Include the bot's `LICENSE` file in it.
 2. Run `npm run checksums` to write its `.sha256` file.
-3. Add the logo as `public/icons/<icon>.png`: a white drawing on a transparent background, roughly square. Then add its two colours to the `icons` map in `components/AppIcon.tsx`. Skip this step and the bot shows its first letter instead.
+3. Add a logo to the `icons` map in `components/AppIcon.tsx`: a tile colour and a white SVG drawing on a 24×24 grid. Skip this step and the bot shows its first letter on a grey tile.
 4. Add an entry to `data/bots.json`:
 
 ```json
@@ -53,7 +52,7 @@ scripts/checksums.mjs   Writes the .sha256 files for the zips
   "tags": ["discord", "music"],
   "status": "beta",
   "version": "1.0.0",
-  "icon": "my-icon",
+  "icon": "my-logo",
   "features": ["..."],
   "commands": [{ "name": "/play <song>", "description": "..." }],
   "requirements": ["Node.js 18+", "Discord bot token"],

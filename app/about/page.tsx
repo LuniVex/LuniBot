@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Enter, Glow, Reveal } from "@/components/Motion";
+import { Enter, Reveal } from "@/components/Motion";
 import { DiscordCta } from "@/components/Sections";
 import { bots, site } from "@/lib/bots";
 import { licenseInfo } from "@/lib/license";
@@ -27,34 +27,31 @@ export default function About() {
   const external = bots.filter((b) => b.telemetry !== "none");
   return (
     <>
-      <section className="relative isolate px-5 pb-16 pt-33 text-center md:pt-41">
-        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-b from-alt/70 to-bg" />
-        <Glow colors={["#2f8cff", "#8b5cf6"]} strength={0.8} className="-z-10" />
-        <Enter><p className="t-eyebrow text-fg-2">About</p></Enter>
-        <Enter delay={0.08}><h1 className="t-hero mx-auto mt-3 max-w-[16ch]">Small bots. Your server. No strings.</h1></Enter>
-        <Enter delay={0.16}><p className="t-lead mx-auto mt-5 max-w-[40ch] text-fg-2">What {site.name} is, what the site counts, and how to check what you download.</p></Enter>
+      <section className="px-5 pb-8 pt-33 text-center md:pt-41">
+        <Enter><h1 className="t-hero mx-auto max-w-[16ch]">About LuniBots</h1></Enter>
+        <Enter delay={0.08}><p className="t-lead mx-auto mt-5 max-w-[40ch] text-fg-2">What the site is, what it counts, how to check a download, and how the bots are licensed.</p></Enter>
       </section>
 
-      <Part id="what" title="What this is.">
+      <Part id="what" title="What this is">
         <p><span className="text-fg">{site.name} is a small collection of Discord bots written and kept up by {site.owner}.</span> Each one is a Node.js program that you run yourself.</p>
         <p>You download a bot&apos;s source code from its page, run it on your own computer or server, and invite it to your Discord. Nothing runs on our machines for you, so there&apos;s nothing to sign up for and nothing to cancel. The bots are free.</p>
         <p>If a bot relies on an outside service, its page says so, and that service bills you directly.</p>
       </Part>
 
-      <Part id="counting" title="What the site counts." alt>
+      <Part id="counting" title="What the site counts" alt>
         <p><span className="text-fg">Two numbers per bot: downloads and upvotes.</span> They&apos;re stored on our server so everyone sees the same totals.</p>
         <p>To stop one browser counting twice, the site sets a single cookie, <code className={code}>lb_vid</code>, holding a random ID. It has no name or email in it, scripts on the page can&apos;t read it, and it isn&apos;t shared with anyone. A download counts at most once an hour per browser.</p>
         <p>Your light or dark choice is kept in your browser. There&apos;s no other analytics, advertising or tracking.</p>
       </Part>
 
-      <Part id="checking" title="Checking a download.">
+      <Part id="checking" title="Checking a download">
         <p><span className="text-fg">Every download is a zip of source code, served from this site.</span> No installers, no compiled programs, and no <code className={code}>.env</code> secrets.</p>
         <p>Each bot page shows the file&apos;s SHA-256 checksum and a button that copies a command to check it. By hand, run <code className={code}>shasum -a 256</code> on the zip and compare the result with the page. If they differ, don&apos;t run it, and let us know in the Discord.</p>
         <p>Read the code before you run it. Your Discord bot token gives full control of the bot, so keep it in <code className={code}>.env</code> and never share it.</p>
         {external.map((b) => <p key={b.slug}><span className="text-fg">{b.name}</span> sends data to an outside service. {b.telemetry}</p>)}
       </Part>
 
-      <Part id="licensing" title="Licensing." alt>
+      <Part id="licensing" title="Licensing" alt>
         <p><span className="text-fg">Every bot is released under the GNU General Public License, version 3.</span> Each download includes the full licence text in a <code className={code}>LICENSE</code> file.</p>
         <div className="overflow-hidden rounded-panel bg-tile-alt">
           <dl className="divide-y divide-line/70">

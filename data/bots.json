@@ -23,7 +23,7 @@
       ],
       "status": "beta",
       "version": "1.0.1",
-      "icon": "shield-chat",
+      "icon": "mail-bubble",
       "features": [
         "Two-way DM to thread bridging, including edits and deletes",
         "Claim and unclaim tickets, with alerts to a mod-help channel",
@@ -112,7 +112,7 @@
       ],
       "status": "beta",
       "version": "1.0.1",
-      "icon": "notebook",
+      "icon": "voice-notes",
       "features": [
         "Per-speaker voice recording with silence-based segmentation",
         "Transcription via OpenAI Whisper",

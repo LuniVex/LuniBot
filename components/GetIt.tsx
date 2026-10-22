@@ -60,7 +60,7 @@ export function GetIt({ bot, file }: { bot: Bot; file: DownloadFile | null }) {
           ))}
         </ol>
         <p className="t-small mt-6 text-fg-2">Put your Discord bot token in <code className="font-mono">.env</code> before starting.</p>
-        <div className="mt-auto flex flex-wrap items-center gap-x-6 gap-y-3 pt-10">
+        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
           <Pill href={`/api/download/${bot.slug}`} download size="lg">Download v{bot.version}</Pill>
         </div>
         <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2">

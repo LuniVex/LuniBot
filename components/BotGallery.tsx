@@ -8,7 +8,7 @@ import { fetchJson } from "@/lib/fetch-json";
 import { fmtDate } from "@/lib/format";
 import { licenseInfo } from "@/lib/license";
 import { ease, fadeUp, glide } from "@/lib/motion";
-import { AppIcon, iconTint } from "./AppIcon";
+import { AppIcon } from "./AppIcon";
 import { More, pill } from "./Button";
 import { Count } from "./Count";
 import { VoteButton } from "./VoteButton";
@@ -115,10 +115,8 @@ function Tile({ bot, size, live }: Entry & { live?: Live }) {
   // the target, a cursor near its bottom edge would fall off it as it rose and the hover would stutter.
   return (
     <article className="group relative h-full">
-      <div className="relative isolate flex h-full flex-col items-center overflow-hidden rounded-tile bg-tile px-8 pb-10 pt-12 text-center ring-1 ring-transparent transition-[translate,box-shadow] duration-500 ease-[cubic-bezier(0.28,0.11,0.32,1)] group-hover:-translate-y-1.5 group-hover:shadow-[0_30px_70px_-30px_rgba(0,0,0,0.35)] dark:ring-white/[0.06]">
-        <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-6 -z-10 size-56 -translate-x-1/2 rounded-full opacity-0 blur-2xl transition-opacity duration-700 group-hover:opacity-60 dark:group-hover:opacity-35"
-          style={{ background: `radial-gradient(circle, ${iconTint(bot.icon)[0]}, transparent 70%)` }} />
-        <div className="transition-[scale] duration-500 ease-[cubic-bezier(0.28,0.11,0.32,1)] group-hover:scale-[1.06]"><AppIcon icon={bot.icon} name={bot.name} /></div>
+      <div className="relative flex h-full flex-col items-center rounded-tile bg-tile px-8 pb-10 pt-12 text-center ring-1 ring-transparent transition-[translate,box-shadow] duration-500 ease-[cubic-bezier(0.28,0.11,0.32,1)] group-hover:-translate-y-[3px] group-hover:shadow-[0_20px_50px_-30px_rgba(0,0,0,0.45)] dark:ring-white/[0.06]">
+        <AppIcon icon={bot.icon} name={bot.name} />
         <p className="t-small mt-6 text-fg-3"><span className="capitalize">{bot.status}</span> · {bot.language} · {licenseInfo(bot.license).short}</p>
         <h3 className="t-tile mt-1">
           <Link href={`/bots/${bot.slug}`} className="after:absolute after:inset-0 after:rounded-tile">{bot.name}</Link>
