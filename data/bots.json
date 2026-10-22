@@ -1,0 +1,170 @@
+{
+  "site": {
+    "name": "LuniBot",
+    "tagline": "Self-hosted Discord bots. Free, open source, no accounts.",
+    "owner": "LuniVex",
+    "githubOwner": "LuniVex",
+    "discord": "https://discord.gg/bDXkqcwPWz"
+  },
+  "bots": [
+    {
+      "name": "Modmail",
+      "slug": "modmail",
+      "tagline": "Turn DMs into staff-managed support tickets.",
+      "description": "A Discord modmail bot. Members DM the bot and every conversation becomes a public thread in one tickets channel, where staff reply (optionally anonymously), claim, and close it. Closed tickets are archived as transcript files in a private channel and can be searched later.",
+      "language": "JavaScript",
+      "runtime": "Node.js 18+",
+      "tags": [
+        "discord",
+        "moderation",
+        "support",
+        "tickets",
+        "sqlite"
+      ],
+      "status": "beta",
+      "version": "1.0.1",
+      "icon": "mail-bubble",
+      "features": [
+        "Two-way DM to thread bridging, including edits and deletes",
+        "Claim and unclaim tickets, with alerts to a mod-help channel",
+        "Anonymous staff replies",
+        "Snippets (canned responses)",
+        "Transcripts archived as Discord attachments, searchable with /logs",
+        "Rate-limit-safe thread renaming with staff fallback alerts",
+        "SQLite storage, Docker support"
+      ],
+      "commands": [
+        {
+          "name": "/reply <message> [anonymous]",
+          "description": "Reply to the user from inside a ticket"
+        },
+        {
+          "name": "/claim",
+          "description": "Claim the ticket thread"
+        },
+        {
+          "name": "/unclaim [reason]",
+          "description": "Release the ticket thread"
+        },
+        {
+          "name": "/close [reason]",
+          "description": "Close the ticket and generate a transcript"
+        },
+        {
+          "name": "/closeall",
+          "description": "Emergency: force-close all open tickets"
+        },
+        {
+          "name": "/logs user <target>",
+          "description": "Paginated ticket history for a user"
+        },
+        {
+          "name": "/logs search <query>",
+          "description": "Search closed transcripts"
+        },
+        {
+          "name": "/snippet add|remove|list|use",
+          "description": "Manage and send canned responses"
+        },
+        {
+          "name": "/config color|activity|emoji|helpchannel|staffrole|view",
+          "description": "Change bot settings"
+        },
+        {
+          "name": "/help",
+          "description": "List commands"
+        }
+      ],
+      "requirements": [
+        "Node.js 18+ (or Docker)",
+        "Discord bot token",
+        "Message Content and Server Members privileged intents",
+        "A tickets channel, a private archive channel, and a staff role"
+      ],
+      "telemetry": "none",
+      "download": {
+        "file": "/downloads/modmail/modmail-1.0.1.zip",
+        "sourceDir": "bots/modmail",
+        "github": {
+          "repo": "LuniVex/lunibot",
+          "path": "modmail",
+          "releases": "https://github.com/LuniVex/lunibot/releases"
+        }
+      },
+      "released": "2026-07-01",
+      "updated": "2026-10-21",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "DiscMeet",
+      "slug": "discmeet",
+      "tagline": "Record voice meetings, get structured AI notes.",
+      "description": "A Discord meeting note-taker. It joins your voice channel, records each speaker separately, transcribes the audio with OpenAI Whisper, strips filler words, and posts a titled, structured summary with a timed transcript to an archive channel. Also includes a per-user expense tracker with monthly budgets.",
+      "language": "JavaScript",
+      "runtime": "Node.js 18+",
+      "tags": [
+        "discord",
+        "voice",
+        "ai",
+        "transcription",
+        "whisper",
+        "expenses"
+      ],
+      "status": "beta",
+      "version": "1.0.1",
+      "icon": "voice-notes",
+      "features": [
+        "Per-speaker voice recording with silence-based segmentation",
+        "Transcription via OpenAI Whisper",
+        "AI-generated title and structured meeting notes",
+        "Transcript and summary archived to a pinned log channel",
+        "Re-summarize the last session from cache",
+        "Expense tracking with categories and monthly budget"
+      ],
+      "commands": [
+        {
+          "name": "/join",
+          "description": "Join your voice channel and start recording"
+        },
+        {
+          "name": "/summarize",
+          "description": "End the recording and generate AI notes"
+        },
+        {
+          "name": "/leave",
+          "description": "Leave the voice channel"
+        },
+        {
+          "name": "/status",
+          "description": "Show current session info"
+        },
+        {
+          "name": "/resummarize",
+          "description": "Re-run the summary on the last cached session"
+        },
+        {
+          "name": "/expense add|list|edit|remove|total",
+          "description": "Track expenses and budget"
+        }
+      ],
+      "requirements": [
+        "Node.js 18+",
+        "Discord bot token and client ID",
+        "OpenAI API key (usage billed by OpenAI)"
+      ],
+      "telemetry": "Audio and transcripts are sent to OpenAI for transcription and summarisation. The bot itself sends nothing else.",
+      "download": {
+        "file": "/downloads/discmeet/discmeet-1.0.1.zip",
+        "sourceDir": "bots/discmeet",
+        "github": {
+          "repo": "LuniVex/lunibot",
+          "path": "discmeet",
+          "releases": "https://github.com/LuniVex/lunibot/releases"
+        }
+      },
+      "released": "2026-06-27",
+      "updated": "2026-10-21",
+      "license": "GPL-3.0-only"
+    }
+  ]
+}
