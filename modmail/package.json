@@ -1,6 +1,6 @@
 {
   "name": "modmail-bot",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Production-ready Discord Modmail bot with bi-directional DM bridging, ticket management, and transcript archiving.",
   "author": "LuniVex",
   "main": "src/index.js",
@@ -14,6 +14,7 @@
     "dotenv": "^16.4.7"
   },
   "engines": {
-    "node": ">=18.0.0"
-  }
+    "node": ">=22.12.0"
+  },
+  "license": "GPL-3.0-only"
 }

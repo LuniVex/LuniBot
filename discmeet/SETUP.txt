@@ -14,7 +14,7 @@ words, and writes structured meeting notes with a GPT model. The result (notes
 + transcript file) is posted to an archive channel. It also includes a
 per-user expense tracker.
 
-Tech: Node.js (>= 18), discord.js v14, @discordjs/voice, OpenAI API, dotenv.
+Tech: Node.js (>= 22.12), discord.js v14, @discordjs/voice, OpenAI API, dotenv.
 Entry point: src/index.js
 
 !! PRIVACY / LEGAL — READ THIS FIRST !!
@@ -29,7 +29,7 @@ Entry point: src/index.js
 --------------------------------------------------------------------------------
 PART 1 — WHAT YOU NEED BEFORE YOU START
 --------------------------------------------------------------------------------
-  [ ] Node.js 18 or newer           (check: node -v)   https://nodejs.org
+  [ ] Node.js 22.12 or newer        (check: node -v)   https://nodejs.org
   [ ] npm (installed with Node)     (check: npm -v)
   [ ] A Discord account with "Manage Server" permission on your server
   [ ] An OpenAI account with billing set up   https://platform.openai.com
@@ -213,7 +213,7 @@ PM2:
          pm2 startup        (follow the printed instruction)
   Logs: pm2 logs discmeet     Restart: pm2 restart discmeet
 
-Or use any VPS/service that runs Node 18+. There is no Dockerfile for this bot.
+Or use any VPS/service that runs Node 22.12+. There is no Dockerfile for this bot.
 Run only ONE instance per bot token.
 
 Folders the bot creates and writes to (all git-ignored; keep them private):

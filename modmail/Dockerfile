@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:24-alpine
 
 # better-sqlite3 needs python3, make, and g++ to compile native bindings
 RUN apk add --no-cache python3 make g++

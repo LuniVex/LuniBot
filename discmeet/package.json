@@ -1,6 +1,6 @@
 {
   "name": "discmeet-bot",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "AI-powered Discord meeting note-taker bot — records voice channels, transcribes with Whisper, and generates structured meeting notes with GPT.",
   "main": "src/index.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "expenses"
   ],
   "author": "LuniVex",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "@discordjs/voice": "^0.19.2",
     "@snazzah/davey": "^0.1.12",
@@ -31,6 +31,6 @@
     "tweetnacl": "^1.0.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.12.0"
   }
 }

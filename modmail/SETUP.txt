@@ -13,14 +13,14 @@ THREAD inside ONE tickets channel on your server. Staff reply in the thread,
 claim it, and close it. Closed tickets are saved as an HTML transcript that is
 posted to a private archive channel as a file attachment.
 
-Tech: Node.js (>= 18), discord.js v14, SQLite (better-sqlite3), dotenv.
+Tech: Node.js (>= 22.12), discord.js v14, SQLite (better-sqlite3), dotenv.
 Entry point: src/index.js
 
 
 --------------------------------------------------------------------------------
 PART 1 — WHAT YOU NEED BEFORE YOU START
 --------------------------------------------------------------------------------
-  [ ] Node.js 18 or newer           (check: node -v)   https://nodejs.org
+  [ ] Node.js 22.12 or newer        (check: node -v)   https://nodejs.org
   [ ] npm (installed with Node)     (check: npm -v)
   [ ] A Discord account with the "Manage Server" permission on your server
   [ ] Discord "Developer Mode" turned ON (needed to copy IDs):
@@ -197,9 +197,6 @@ OPTION A — Docker (recommended)
   4. Stop:        docker compose down
   The database persists in ./data and transcripts in ./transcripts (both are
   mounted as volumes). Back these folders up.
-  The compose file also publishes port 3000, but nothing listens on it any
-  more (the old web server is unused). You can safely delete the "ports:"
-  block from docker-compose.yml.
 
 OPTION B — PM2 (no Docker)
          npm install -g pm2
@@ -268,9 +265,6 @@ PROJECT MAP
   src/database/schema.js    Tables, indexes, default config values, migrations.
   src/database/db.js        Opens the SQLite database.
   src/utils/                constants, letter mapper, paginator.
-  src/server.js             UNUSED legacy file (old Express transcript server).
-                            Nothing requires it and "express" is not installed.
-                            Safe to delete, or leave alone.
 
 GOLDEN RULES
 ------------
