@@ -115,10 +115,6 @@ Open a terminal in this folder (the one containing package.json).
        TICKETS_CHANNEL_ID=     tickets channel ID
        ARCHIVE_CHANNEL_ID=     archive channel ID
        STAFF_ROLE_ID=          staff role ID
-       MOD_HELP_CHANNEL_ID=    OPTIONAL. Channel that receives an alert (pinging
-                               the staff role) when a ticket is unclaimed.
-                               Can also be set in Discord with
-                               /config helpchannel.
        DATABASE_PATH=          OPTIONAL. Leave empty to use ./data/modmail.db
                                If set, use an ABSOLUTE path to a .db file.
 
@@ -182,17 +178,11 @@ COMMAND REFERENCE
   /snippet add|remove|list|use      Canned responses
   /logs user <@user>                Past tickets for a user (paginated)
   /logs search <query>              Full-text search across ticket messages
-  /config color|activity|emoji|helpchannel|staffrole|view
-                                    Embed colour, bot status, reaction emoji,
-                                    mod-help alert channel, staff role
+  /config color|activity|emoji|view Embed colour, bot status, reaction emoji
   /closeall                         EMERGENCY: force-close every open ticket
   /help                             Built-in help embed
 
-Note: /unclaim posts an alert to the mod-help channel, so set
-MOD_HELP_CHANNEL_ID (or run /config helpchannel) before using it, otherwise it
-replies "No mod-help channel configured".
-
-Known gap: the built-in /help text may not list /claim, /unclaim or
+Known gap: the built-in /help text does not list /claim, /unclaim or
 /closeall. See "Modifying" below if you want to add them.
 
 
@@ -277,9 +267,10 @@ PROJECT MAP
                             permissions, transcriptGenerator.
   src/database/schema.js    Tables, indexes, default config values, migrations.
   src/database/db.js        Opens the SQLite database.
-  src/utils/                constants, letter mapper, paginator, configHelper
-                            (reads settings from the DB config table, falling
-                            back to .env), safeRename.
+  src/utils/                constants, letter mapper, paginator.
+  src/server.js             UNUSED legacy file (old Express transcript server).
+                            Nothing requires it and "express" is not installed.
+                            Safe to delete, or leave alone.
 
 GOLDEN RULES
 ------------

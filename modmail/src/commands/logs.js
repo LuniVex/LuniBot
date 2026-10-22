@@ -76,7 +76,7 @@ module.exports = {
             const status = t.status === 'open' ? '🟢 Open' : '🔴 Closed';
             const created = new Date(t.created_at + 'Z');
             return [
-              `**Ticket #${t.id}** - ${status}`,
+              `**Ticket #${t.id}** — ${status}`,
               `> **Subject:** ${t.subject || 'N/A'}`,
               `> **Created:** <t:${Math.floor(created.getTime() / 1000)}:f>`,
               t.closed_at
@@ -116,13 +116,13 @@ module.exports = {
       for (let i = 0; i < results.length; i += perPage) {
         const slice = results.slice(i, i + perPage);
         const embed = new EmbedBuilder()
-          .setTitle(`🔍 Search Results - "${query}"`)
+          .setTitle(`🔍 Search Results — "${query}"`)
           .setColor(embedColor);
 
         const description = slice
           .map((r) => {
             return [
-              `**Ticket #${r.tid}** - ${r.subject || 'N/A'}`,
+              `**Ticket #${r.tid}** — ${r.subject || 'N/A'}`,
               `> ${r.search_snippet || ''}`,
               `> *User: <@${r.ticket_user_id}>*`,
               `> **Transcript:** ${r.transcript_url ? `[View HTML](${r.transcript_url})` : '*Not available*'}`,

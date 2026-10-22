@@ -108,8 +108,6 @@ function initialize() {
     embed_color: '5865F2',
     activity_status: 'DM me for help',
     reaction_emoji: '📬',
-    mod_help_channel_id: '',
-    staff_role_id: '',
   };
 
   for (const [key, value] of Object.entries(defaults)) {
@@ -125,10 +123,6 @@ function initialize() {
   
   try {
     db.exec('ALTER TABLE tickets ADD COLUMN claimed_by TEXT;');
-  } catch (err) {}
-
-  try {
-    db.exec('ALTER TABLE tickets ADD COLUMN help_alert_message_id TEXT;');
   } catch (err) {}
 }
 

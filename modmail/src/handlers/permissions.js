@@ -5,7 +5,7 @@
  */
 
 const db = require('../database/db');
-const { getStaffRoleId } = require('../utils/configHelper');
+const config = require('../config');
 
 /**
  * Checks whether a guild member has permission to run a command.
@@ -16,8 +16,7 @@ function hasPermission(member, commandName) {
   if (member.guild && member.id === member.guild.ownerId) return true;
 
   // Staff role grants access to all modmail commands
-  const staffRoleId = getStaffRoleId();
-  if (staffRoleId && member.roles?.cache?.has(staffRoleId)) return true;
+  if (member.roles?.cache?.has(config.staffRoleId)) return true;
 
   // Check per-user override
   const userPerm = db

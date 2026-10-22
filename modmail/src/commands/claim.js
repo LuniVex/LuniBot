@@ -7,8 +7,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { getTicketByChannelId, claimTicket } = require('../handlers/ticketManager');
 const { hasPermission } = require('../handlers/permissions');
-const { getModHelpChannelId } = require('../utils/configHelper');
-const db = require('../database/db');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -38,44 +36,25 @@ module.exports = {
       });
     }
 
-    if (ticket.claimed_by) {
+    const newName = interaction.channel.name.replace(/\[OPEN - UNCLAIMED\]/, '[OPEN - CLAIMED]');
+    if (newName === interaction.channel.name) {
       return interaction.reply({
-        content: `❌ This ticket is already claimed by <@${ticket.claimed_by}>.`,
+        content: '❌ This ticket is already claimed or has a custom status.',
         ephemeral: true,
       });
     }
 
     try {
-      // Claim in the database (no rename)
+      await interaction.channel.setName(newName);
       claimTicket(ticket.id, interaction.user.id);
-
-      // Delete the #mod-help alert if one exists
-      if (ticket.help_alert_message_id) {
-        try {
-          const modHelpChannelId = getModHelpChannelId();
-          if (modHelpChannelId) {
-            const modHelpChannel = interaction.client.channels.cache.get(modHelpChannelId);
-            if (modHelpChannel) {
-              const alertMsg = await modHelpChannel.messages.fetch(ticket.help_alert_message_id).catch(() => null);
-              if (alertMsg) await alertMsg.delete().catch(() => {});
-            }
-          }
-        } catch (_) {
-          // Silent - alert may already be deleted
-        }
-
-        // Clear the stored alert ID
-        db.prepare('UPDATE tickets SET help_alert_message_id = NULL WHERE id = ?')
-          .run(ticket.id);
-      }
-
+      
       await interaction.reply({
-        content: `✅ Ticket claimed by ${interaction.user.toString()}.`,
+        content: `✅ Ticket claimed by ${interaction.user.toString()}.`
       });
     } catch (err) {
       console.error('[Claim] Error:', err);
       await interaction.reply({
-        content: '❌ Failed to claim ticket. Please try again.',
+        content: '❌ Failed to claim ticket. The bot might be rate-limited on renaming channels.',
         ephemeral: true,
       });
     }

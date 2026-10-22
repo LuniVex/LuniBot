@@ -139,7 +139,7 @@ module.exports = {
           snippets
             .map(
               (s) =>
-                `**\`${s.name}\`** - ${
+                `**\`${s.name}\`** — ${
                   s.content.length > 80
                     ? s.content.slice(0, 80) + '...'
                     : s.content
@@ -175,7 +175,7 @@ module.exports = {
         });
       }
 
-      // Defer ephemerally - the real content goes as a channel message
+      // Defer ephemerally — the real content goes as a channel message
       await interaction.deferReply({ ephemeral: true });
 
       const authorName = snippet.anonymous

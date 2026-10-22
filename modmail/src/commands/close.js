@@ -16,8 +16,6 @@ const {
   getTicketMessages,
 } = require('../handlers/ticketManager');
 const { generateTranscript } = require('../handlers/transcriptGenerator');
-const { getModHelpChannelId } = require('../utils/configHelper');
-const { safeSetName } = require('../utils/safeRename');
 const config = require('../config');
 
 module.exports = {
@@ -78,7 +76,7 @@ module.exports = {
           .catch(() => null);
 
         const archiveEmbed = new EmbedBuilder()
-          .setTitle(`📁 Ticket Closed - #${ticket.id}`)
+          .setTitle(`📁 Ticket Closed — #${ticket.id}`)
           .setColor(0xed4245)
           .addFields(
             {
@@ -120,22 +118,6 @@ module.exports = {
         }
       }
 
-      // ── Delete the #mod-help alert if one exists ──
-      if (closedTicket.help_alert_message_id) {
-        try {
-          const modHelpChannelId = getModHelpChannelId();
-          if (modHelpChannelId) {
-            const modHelpChannel = interaction.client.channels.cache.get(modHelpChannelId);
-            if (modHelpChannel) {
-              const alertMsg = await modHelpChannel.messages.fetch(closedTicket.help_alert_message_id).catch(() => null);
-              if (alertMsg) await alertMsg.delete().catch(() => {});
-            }
-          }
-        } catch (_) {
-          // Silent - alert may already be deleted
-        }
-      }
-
       // Notify the user via DM
       const user = await interaction.client.users
         .fetch(ticket.user_id)
@@ -167,7 +149,7 @@ module.exports = {
       setTimeout(async () => {
         if (interaction.channel.isThread()) {
           const newName = interaction.channel.name.replace(/\[OPEN.*?\]/, '[CLOSED]');
-          await safeSetName(interaction.channel, newName, { lock: true, archive: true });
+          await interaction.channel.edit({ name: newName, locked: true, archived: true }).catch(() => {});
         } else {
           await interaction.channel.delete().catch(() => {}); // Fallback for old channels
         }

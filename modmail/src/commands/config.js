@@ -8,7 +8,6 @@ const {
   SlashCommandBuilder,
   EmbedBuilder,
   ActivityType,
-  ChannelType,
 } = require('discord.js');
 const { hasPermission } = require('../handlers/permissions');
 const db = require('../database/db');
@@ -47,29 +46,6 @@ module.exports = {
           opt
             .setName('emoji')
             .setDescription('The emoji to use for confirmations')
-            .setRequired(true)
-        )
-    )
-    .addSubcommand((sub) =>
-      sub
-        .setName('helpchannel')
-        .setDescription('Set the #mod-help channel for unclaim alerts')
-        .addChannelOption((opt) =>
-          opt
-            .setName('channel')
-            .setDescription('The channel to post unclaim alerts in')
-            .addChannelTypes(ChannelType.GuildText)
-            .setRequired(true)
-        )
-    )
-    .addSubcommand((sub) =>
-      sub
-        .setName('staffrole')
-        .setDescription('Set the staff role that grants modmail access')
-        .addRoleOption((opt) =>
-          opt
-            .setName('role')
-            .setDescription('The role to use as the staff role')
             .setRequired(true)
         )
     )
@@ -141,34 +117,6 @@ module.exports = {
       });
     }
 
-    // ── /config helpchannel ──
-    if (sub === 'helpchannel') {
-      const channel = interaction.options.getChannel('channel');
-
-      db.prepare(
-        "INSERT OR REPLACE INTO config (key, value) VALUES ('mod_help_channel_id', ?)"
-      ).run(channel.id);
-
-      return interaction.reply({
-        content: `✅ Mod-help channel set to ${channel.toString()}.`,
-        ephemeral: true,
-      });
-    }
-
-    // ── /config staffrole ──
-    if (sub === 'staffrole') {
-      const role = interaction.options.getRole('role');
-
-      db.prepare(
-        "INSERT OR REPLACE INTO config (key, value) VALUES ('staff_role_id', ?)"
-      ).run(role.id);
-
-      return interaction.reply({
-        content: `✅ Staff role set to ${role.toString()}.`,
-        ephemeral: true,
-      });
-    }
-
     // ── /config view ──
     if (sub === 'view') {
       const configs = db.prepare('SELECT * FROM config').all();
@@ -181,19 +129,9 @@ module.exports = {
         const displayName = cfg.key
           .replace(/_/g, ' ')
           .replace(/\b\w/g, (c) => c.toUpperCase());
-
-        let displayValue = cfg.value || 'Not set';
-
-        // Show channel/role mentions for ID-based values
-        if (cfg.key === 'mod_help_channel_id' && cfg.value) {
-          displayValue = `<#${cfg.value}>`;
-        } else if (cfg.key === 'staff_role_id' && cfg.value) {
-          displayValue = `<@&${cfg.value}>`;
-        }
-
         embed.addFields({
           name: displayName,
-          value: displayValue,
+          value: cfg.value || 'Not set',
           inline: true,
         });
       }

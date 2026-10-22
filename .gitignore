@@ -8,9 +8,3 @@
 # Dependencies and local runtime data
 node_modules/
 .DS_Store
-.data/
-
-# Website build output
-.next/
-*.tsbuildinfo
-next-env.d.ts

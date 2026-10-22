@@ -20,7 +20,7 @@ module.exports = {
     );
 
     const embed = new EmbedBuilder()
-      .setTitle('📬 Modmail Bot - Commands')
+      .setTitle('📬 Modmail Bot — Commands')
       .setColor(embedColor)
       .setDescription('Here are all available commands:')
       .addFields(

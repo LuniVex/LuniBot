@@ -69,7 +69,7 @@ async function createTicket(client, user, subject) {
     .get(user.id);
 
   const letter = countToLetter(count);
-  const channelName = `[OPEN] ticket-${user.id}-${letter}`;
+  const channelName = `[OPEN - UNCLAIMED] ticket-${user.id}-${letter}`;
 
   const ticketsChannel = guild.channels.cache.get(config.ticketsChannelId);
   if (!ticketsChannel) throw new Error('Tickets channel not found. Check TICKETS_CHANNEL_ID in .env.');
@@ -107,7 +107,7 @@ async function createTicket(client, user, subject) {
   const member = await guild.members.fetch(user.id).catch(() => null);
 
   const openEmbed = new EmbedBuilder()
-    .setTitle(`📬 New Ticket - ${letter.toUpperCase()}`)
+    .setTitle(`📬 New Ticket — ${letter.toUpperCase()}`)
     .setColor(embedColor)
     .setDescription(`**Subject:** ${subject}`)
     .addFields(

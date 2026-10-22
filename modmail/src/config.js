@@ -12,6 +12,5 @@ module.exports = {
   ticketsChannelId: process.env.TICKETS_CHANNEL_ID,
   archiveChannelId: process.env.ARCHIVE_CHANNEL_ID,
   staffRoleId: process.env.STAFF_ROLE_ID,
-  modHelpChannelId: process.env.MOD_HELP_CHANNEL_ID,
   databasePath: process.env.DATABASE_PATH,
 };

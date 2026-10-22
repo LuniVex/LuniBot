@@ -143,7 +143,7 @@ async function generateTranscript(ticket, client) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ticket Transcript - ${escapeHtml(ticket.subject || 'Untitled')}</title>
+  <title>Ticket Transcript — ${escapeHtml(ticket.subject || 'Untitled')}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .message-content code { background-color: #374151; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
@@ -155,7 +155,7 @@ async function generateTranscript(ticket, client) {
   <div class="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
     <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-lg mb-8 overflow-hidden">
       <div class="bg-gradient-to-r from-blue-900 to-indigo-900 px-6 py-8 border-b border-gray-700">
-        <h1 class="text-2xl font-bold text-white mb-2">📋 Ticket Transcript - ${escapeHtml(ticket.subject || 'Untitled')}</h1>
+        <h1 class="text-2xl font-bold text-white mb-2">📋 Ticket Transcript — ${escapeHtml(ticket.subject || 'Untitled')}</h1>
         <p class="text-indigo-200 text-sm">Archived conversation log</p>
       </div>
       <div class="p-6 grid grid-cols-2 md:grid-cols-3 gap-6">
