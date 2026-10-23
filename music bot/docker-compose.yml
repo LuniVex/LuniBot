@@ -1,0 +1,18 @@
+services:
+  music-bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Paths inside the container; mount your cookies file read-only if you use one.
+      DATABASE_PATH: /app/data/bot.sqlite
+      # YTDLP_COOKIES_FILE: /run/secrets/cookies.txt
+    volumes:
+      - bot-data:/app/data
+      # - ./secrets/cookies.txt:/run/secrets/cookies.txt:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+    stop_grace_period: 15s
+
+volumes:
+  bot-data:

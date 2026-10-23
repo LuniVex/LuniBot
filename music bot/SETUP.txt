@@ -1,0 +1,444 @@
+================================================================================
+ MUSIC BOT — SETUP & MODIFICATION GUIDE
+================================================================================
+ Created by LuniVex  ·  https://github.com/LuniVex/lunibot
+ Please keep this credit (here, in the source-file headers, and in the startup
+ log line) when you copy, fork or modify this bot.
+================================================================================
+
+WHAT THIS BOT DOES
+------------------
+Plays music in your voice channels. Type a song name or paste a link from
+YouTube, YouTube Music, Spotify, SoundCloud, Bandcamp, Twitch, archive.org or
+any of the 1800+ sites yt-dlp supports. Control everything from buttons on a
+"now playing" card: pause, skip, previous, loop, shuffle, volume, filters
+(bass boost, nightcore, 8D, normalise), and live synced lyrics that highlight
+the current line as the song plays.
+
+Tech: Node.js (>= 22.12), discord.js v14, @discordjs/voice, yt-dlp, FFmpeg,
+SQLite (better-sqlite3).
+Entry point: src/index.js
+
+
+--------------------------------------------------------------------------------
+PART 1 — WHAT YOU NEED BEFORE YOU START
+--------------------------------------------------------------------------------
+  [ ] Node.js 22.12 or newer        (check: node -v)   https://nodejs.org
+      Node 18 and 20 will NOT work: Discord's voice encryption library
+      requires 22.12+. The current LTS (24) is recommended.
+  [ ] npm (installed with Node)     (check: npm -v)
+  [ ] Python 3.10 or newer          (check: python3 --version   or
+                                            python --version on Windows)
+      https://www.python.org/downloads/
+      The bot uses Python to install and auto-update yt-dlp, the tool that
+      reads YouTube/SoundCloud/etc. You never run Python yourself.
+      Windows: tick "Add python.exe to PATH" in the installer.
+  [ ] A Discord account with the "Manage Server" permission on your server
+  [ ] Discord "Developer Mode" turned ON (needed to copy IDs):
+        Discord > User Settings > Advanced > Developer Mode
+
+FFmpeg is NOT required up front: if it isn't installed, npm downloads a copy
+for you. If you already have FFmpeg on your PATH, the bot uses that one.
+
+better-sqlite3 ships prebuilt binaries for Windows, macOS and Linux, so no
+compiler is normally needed.
+
+
+--------------------------------------------------------------------------------
+PART 2 — CREATE THE DISCORD APPLICATION AND BOT
+--------------------------------------------------------------------------------
+1. Go to https://discord.com/developers/applications and click "New Application".
+   Name it (for example "Music") and create it.
+
+2. Open the "Bot" tab on the left.
+   a. Click "Reset Token" and copy the token. This is DISCORD_TOKEN.
+      Treat it like a password. Never post it, commit it, or screenshot it.
+      If it ever leaks, click "Reset Token" again immediately.
+   b. OPTIONAL — under "Privileged Gateway Intents" switch ON:
+        - MESSAGE CONTENT INTENT
+      Only needed for the "music channel" feature (type a song name as a
+      normal message in one channel). Without it the bot still works fully;
+      it just logs a warning and skips that feature. No other privileged
+      intents are needed.
+      Click "Save Changes".
+
+3. Invite the bot to your server:
+   EASIEST: open this URL, replacing APP_ID with the "Application ID" from
+   the "General Information" tab:
+
+     https://discord.com/oauth2/authorize?client_id=APP_ID&scope=bot+applications.commands&permissions=3230784
+
+   OR build it yourself in "OAuth2" > "URL Generator":
+   a. Scopes: tick  bot  and  applications.commands
+   b. Bot permissions: tick
+        - View Channels
+        - Send Messages
+        - Embed Links
+        - Read Message History
+        - Add Reactions
+        - Connect
+        - Speak
+   c. Copy the generated URL, open it, choose your server, and authorise.
+
+   If some voice channels are private, give the bot's role "Connect" and
+   "Speak" in those channels too.
+
+
+--------------------------------------------------------------------------------
+PART 3 — INSTALL AND CONFIGURE
+--------------------------------------------------------------------------------
+Open a terminal in this folder (the one containing package.json). The folder
+name has a space in it, so use quotes:
+       cd "music bot"
+
+1. Install dependencies:
+       npm install
+
+2. Create your environment file:
+       cp .env.example .env              (macOS / Linux)
+       copy .env.example .env            (Windows Command Prompt)
+   (.env.example starts with a dot, so it is HIDDEN by default.
+    macOS Finder: press Cmd+Shift+.    Linux: Ctrl+H    Terminal: ls -a
+    VS Code shows it automatically.)
+
+3. Open .env and fill it in. No quotes, no spaces around "=":
+
+       DISCORD_TOKEN=          token from Part 2, step 2a       (REQUIRED)
+       DEV_GUILD_ID=           your server ID                   (RECOMMENDED)
+                               Right-click your server icon > Copy Server ID.
+                               Slash commands then appear instantly in that
+                               server. Leave empty to register them globally
+                               (all servers; can take up to an hour at first).
+       DISCORD_CLIENT_ID=      OPTIONAL. Application ID. Detected
+                               automatically; only needed for
+                               "npm run deploy-commands".
+
+   Everything else in .env is optional and explained by the comments in the
+   file. The most useful extras:
+
+       SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET
+                               Not needed: Spotify links work without them.
+       MUSIXMATCH_API_KEY / GENIUS_ACCESS_TOKEN
+                               Extra lyrics sources. Not needed: the main
+                               lyrics source (LRCLIB) is free and keyless.
+       YTDLP_COOKIES_FILE      Only if YouTube blocks your server with
+                               "confirm you're not a bot" (see Part 9).
+
+   NEVER commit .env. It is already listed in .gitignore.
+
+4. OPTIONAL — defaults for all servers live in config.json: default volume,
+   queue size limit, playlist import cap, allowed text/voice channels, DJ role,
+   how long the bot waits before leaving an empty channel, and so on.
+
+
+--------------------------------------------------------------------------------
+PART 4 — RUN IT
+--------------------------------------------------------------------------------
+Normal start:
+       npm start
+
+Development (restarts automatically when files change):
+       npm run dev
+
+The FIRST start takes a minute or two: the bot creates a private Python
+environment in .venv-ytdlp/ and installs yt-dlp into it. Every later start
+just updates yt-dlp (a few seconds) — YouTube changes often, and a restart is
+how you pick up fixes.
+
+The console prints one JSON line per event. You should see, in order:
+       ..."msg":"health endpoint listening on /healthz"
+       ..."msg":"yt-dlp installed"        (or "yt-dlp refreshed")
+       ..."msg":"binaries ready"
+       ..."msg":"logged in"
+       ..."msg":"[Credit] Music Bot by LuniVex — https://github.com/LuniVex/lunibot"
+       ..."msg":"slash commands registered"
+
+Tip: for readable, coloured logs run   npm start | npx pino-pretty
+
+Health check: open http://localhost:8080/healthz — it says "ready" when the
+bot is connected.
+
+
+--------------------------------------------------------------------------------
+PART 5 — TEST THE WHOLE FLOW
+--------------------------------------------------------------------------------
+1. Join a voice channel.
+2. Run   /play daft punk one more time
+   The bot joins and posts a "Now playing" card. The first song can take
+   5–10 seconds to start (YouTube makes new streams wait a few seconds);
+   later songs start almost immediately.
+3. Run   /play https://www.youtube.com/watch?v=dQw4w9WgXcQ
+   It is added to the queue ("Up next").
+4. Try the card buttons: Pause/Resume, Skip, Previous, Loop, Shuffle, Add,
+   Queue, the Volume menu and the Filters menu.
+5. Press 🎤 Lyrics on the card. The card now shows the lyrics with the
+   current line in bold. Use −2s / +2s if they run early or late.
+6. Run   /lyrics   for the full text, or   /lyrics query:believer   to search.
+7. Run   /settings view   to see the server settings.
+8. Press ⏹️ Stop. The bot leaves and the card closes.
+
+
+--------------------------------------------------------------------------------
+COMMAND REFERENCE
+--------------------------------------------------------------------------------
+  /play <query> [next] [choose] [lyrics]
+        Song name or any link (track, playlist, album, live stream).
+        next:true   = put it at the front of the queue
+        choose:true = always show the list of search results to pick from
+        lyrics:true = turn on live lyrics on the card
+  /queue [page]                     The queue (only you see it)
+  /lyrics [query] [live]            Lyrics for the current song, a manual
+                                    search, or live:true/false for the card
+  /playlist save|load|list|delete   Your own saved playlists
+  /settings view|volume|dj-role|always-on|music-channel
+                                    Server settings (needs Manage Server)
+
+  Card buttons: ⏮️ previous · ⏯️ pause · ⏭️ skip · ⏹️ stop · 🎤 lyrics ·
+  🔀 shuffle · 🔁 loop · ➕ add · 📜 queue · volume menu · filters menu
+
+
+--------------------------------------------------------------------------------
+PART 6 — SERVER SETTINGS (/settings)
+--------------------------------------------------------------------------------
+  /settings volume percent:60        Default volume for new sessions
+  /settings dj-role role:@DJ         Only DJs (and server managers) can use
+                                     the playback buttons. Everyone can still
+                                     add songs. Run without a role to clear.
+  /settings always-on enabled:true   24/7 mode: never leave the voice channel,
+                                     rejoin automatically after a restart.
+  /settings music-channel channel:#music
+                                     Any message in #music is played like
+                                     /play. Needs the Message Content intent
+                                     (Part 2, step 2b). Lines starting with //
+                                     are ignored so people can still chat.
+
+
+--------------------------------------------------------------------------------
+PART 7 — RUNNING IT 24/7
+--------------------------------------------------------------------------------
+OPTION A — Docker (recommended)
+  1. Make sure .env exists (Part 3).
+  2. Build and start:
+         docker compose up -d --build
+  3. Logs:        docker compose logs -f
+  4. Stop:        docker compose down
+  The image includes FFmpeg, Python and yt-dlp and updates yt-dlp on every
+  start. The database lives in the "bot-data" Docker volume.
+
+OPTION B — PM2 (no Docker)
+         npm install -g pm2
+         pm2 start src/index.js --name music-bot
+         pm2 save
+         pm2 startup        (follow the printed instruction)
+  Logs: pm2 logs music-bot      Restart: pm2 restart music-bot
+
+Hosting notes:
+  - Voice needs outbound UDP. Some hosts/firewalls block it: the bot joins
+    but nothing is heard.
+  - Cloud servers (VPS) are often blocked by YouTube ("confirm you're not a
+    bot"). Home connections almost never are. See Part 9.
+  - About 120 MB RAM plus 20–40 MB per server that is playing.
+  - Restart the bot now and then (e.g. nightly) to pick up yt-dlp updates.
+
+Run only ONE instance of the bot per token and per database file.
+
+
+--------------------------------------------------------------------------------
+PART 8 — BACKUPS
+--------------------------------------------------------------------------------
+All state lives in:
+  data/bot.sqlite (+ bot.sqlite-wal / bot.sqlite-shm while running)
+It holds server settings, saved playlists, play history, lyrics cache and
+each user's lyrics offset. Stop the bot before copying it, or copy all three
+files together. .venv-ytdlp/ does not need backing up; it is rebuilt.
+
+
+--------------------------------------------------------------------------------
+PART 9 — TROUBLESHOOTING
+--------------------------------------------------------------------------------
+"npm ERR! engine" / "requires Node >= 22.12" / voice errors on start
+    Your Node is too old. Install Node 22.12+ (24 LTS recommended), then
+    delete node_modules and run npm install again.
+
+"An invalid token was provided" / TokenInvalid
+    DISCORD_TOKEN is empty, has extra spaces/quotes, or was reset. Paste it again.
+
+"Message Content intent is not enabled ... music-channel trigger disabled"
+    Only a warning. Enable it (Part 2, step 2b) if you want the music channel.
+
+Slash commands do not appear
+    Set DEV_GUILD_ID to your server ID and restart (instant), or wait for
+    global commands to spread. Check the invite included
+    "applications.commands". Press Ctrl+R in Discord to reload.
+
+"I can't join or speak in #channel"
+    Give the bot View Channel, Connect and Speak in that voice channel.
+
+The bot joins but you hear nothing
+    Your host blocks outbound UDP, or the bot was server-muted. Check the
+    volume menu on the card is not very low.
+
+"YouTube refused the request ... confirm you're not a bot"
+    YouTube blocks many server IPs. Fix:
+      1. In a private browser window, log into YouTube with a SPARE account.
+      2. Export cookies as "cookies.txt" (Netscape format) with a
+         "Get cookies.txt" browser extension.
+      3. Put the file in a folder called secrets/ (already git-ignored) and set
+             YTDLP_COOKIES_FILE=./secrets/cookies.txt
+      4. Restart. Meanwhile SoundCloud/Bandcamp links still work.
+
+The first song takes 5–10 seconds to start
+    Normal: YouTube makes new streams wait a few seconds. Later songs are
+    prepared in advance.
+
+"yt-dlp not found" / "could not create virtualenv" / pip errors
+    Install Python 3.10+ (Part 1) and restart. Or set YTDLP_INSTALL_MODE=binary
+    in .env to download a standalone yt-dlp instead (slower to start on macOS).
+
+Vimeo links fail
+    Vimeo now requires login. Add Vimeo cookies to your cookies file.
+
+A Spotify playlist is missing songs
+    Without Spotify credentials the bot reads Spotify's public page, which may
+    not list every song of very long playlists. Private playlists can't be read.
+
+Lyrics are wrong or missing
+    Use /lyrics query:<song> <artist>, pick the right song, and press
+    "📌 Use for current song". The choice is remembered for that song.
+
+Port 8080 already in use
+    Set HEALTH_PORT to another number in .env.
+
+Something else
+    Run with LOG_LEVEL=debug in .env and read the lines with "level":40 or
+    higher (warnings and errors).
+
+
+================================================================================
+ MODIFYING THE BOT
+================================================================================
+
+PROJECT MAP
+-----------
+  src/index.js              Starts everything: Discord client, health server,
+                            graceful shutdown. Intents are declared here.
+  src/config.js             Reads .env and config.json into one config object.
+  src/db.js                 SQLite tables: settings, playlists, history,
+                            lyrics cache, user offsets.
+  src/bot/commands.js       Slash command definitions + handlers (/play,
+                            /queue, /settings, /playlist).
+  src/bot/lyrics.js         /lyrics and the lyrics buttons.
+  src/bot/interactions.js   Routes every button/menu/modal by its customId.
+  src/bot/play.js           The shared "play something" flow.
+  src/bot/permissions.js    Voice/DJ/channel checks.
+  src/player/GuildPlayer.js One player per server: queue, state machine,
+                            voice reconnects, now-playing card, live lyrics.
+  src/player/stream.js      The FFmpeg command line and audio FILTERS.
+  src/sources/              yt-dlp (running, errors, install), Spotify,
+                            search/autocomplete, link resolver.
+  src/lyrics/               Lyrics service, matching, LRC parser, and
+                            providers/ (lrclib, musixmatch, genius).
+  src/ui/                   How the card, queue, picker and lyrics look.
+  config.json               Defaults for every server.
+
+GOLDEN RULES
+------------
+  1. Keep the credit header at the top of every file you edit, and add it to any
+     new file you create:
+         /**
+          * Music Bot — src/<path>
+          * Created by LuniVex (https://github.com/LuniVex/lunibot)
+          * Please keep this credit when copying or modifying this file.
+          */
+     Also keep the "[Credit]" line in src/index.js and the "author" field in
+     package.json. If you fork it, add your own line UNDER the original credit
+     instead of replacing it.
+  2. Restart the bot after every change (npm run dev does this for you).
+  3. Never put secrets in the code. New settings go in .env AND in
+     .env.example (placeholder value only) AND in this file.
+  4. Test on a separate test server and test bot token first.
+  5. This project uses ES modules (import/export), not require().
+
+ADD A NEW SLASH COMMAND
+-----------------------
+  1. In src/bot/commands.js, add a builder to the "commandData" array:
+
+         new SlashCommandBuilder()
+           .setName('ping')
+           .setDescription('Check that the bot is alive')
+           .setContexts(InteractionContextType.Guild),
+
+  2. In the same file, write the handler and add it to "commandHandlers":
+
+         async function ping(interaction) {
+           await interaction.reply({ content: 'Pong!', flags: MessageFlags.Ephemeral });
+         }
+         export const commandHandlers = { play, queue, settings, playlist, lyrics, ping };
+
+  3. Restart. Commands are re-registered on every start.
+  Command name rules: lowercase, no spaces, max 32 characters. Descriptions
+  max 100 characters. Throw "new UserError('message', { hint: 'fix' })" for
+  errors the user should see; they are shown privately with the hint.
+
+ADD AN AUDIO FILTER
+-------------------
+  Add an entry to FILTERS in src/player/stream.js, e.g.
+         vaporwave: { label: 'Vaporwave', emoji: '🌆', af: 'asetrate=48000*0.8,aresample=48000', speed: 0.8 },
+  "af" is an FFmpeg audio filter; "speed" (optional) keeps the progress bar
+  and lyrics in sync when the filter changes the speed. It appears in the
+  Filters menu automatically.
+
+ADD A LYRICS PROVIDER
+---------------------
+  Create src/lyrics/providers/<name>.js exporting an object with:
+         id, name, needsKey, canSync,
+         enabled()            -> true when its key/env var is set
+         find(metas)          -> candidates for the playing song
+         search(query)        -> candidates for /lyrics query:
+  A candidate is { title, artist, durationSec, plain, syncedLrc, url,
+  instrumental } or, if the text needs another request, a load() function
+  returning { plain, syncedLrc }. Register it in ALL_PROVIDERS in
+  src/lyrics/service.js and add its id to "providers" in config.json. Put
+  its key in .env.example. Matching, caching and the display are automatic.
+
+CHANGE LOOK AND DEFAULTS
+------------------------
+  - Card layout, button labels, colours: src/ui/nowPlaying.js
+  - Lyrics views and live window: src/ui/lyrics.js
+  - Queue/picker views: src/ui/views.js
+  - Limits and timers: config.json
+  - Error messages for failed links: ERROR_RULES in src/sources/ytdlp.js
+
+AFTER MODIFYING
+---------------
+  1. Syntax check a file:        node --check src/bot/commands.js
+  2. Unit tests:                 npm test
+  3. Full test without Discord:  npm run smoke   and   npm run smoke:lyrics
+     (these play real music from the internet into a fake voice channel)
+  4. Exercise Part 5 on a test server.
+  5. Update this SETUP.txt and .env.example if you added settings or commands.
+  6. Bump "version" in package.json when you ship a change.
+
+UPDATING DEPENDENCIES
+---------------------
+         npm outdated
+         npm update
+  yt-dlp updates itself on every start. A major discord.js upgrade (v15+) or
+  @discordjs/voice change can break the code: read the migration guide and
+  test on a test server first.
+
+
+================================================================================
+ SECURITY CHECKLIST
+================================================================================
+  [ ] .env is NOT committed and NOT inside any zip you share
+  [ ] Your cookies file (secrets/) is NOT committed — it logs into YouTube
+  [ ] data/ is NOT committed (settings, playlists, history)
+  [ ] Token reset immediately if it was ever exposed
+  [ ] The health port (8080) is not exposed to the internet
+      (docker-compose.yml binds it to 127.0.0.1 only)
+  [ ] Use a spare account for YouTube cookies, never your main one
+
+================================================================================
+ Music Bot — Created by LuniVex — https://github.com/LuniVex/lunibot
+================================================================================

@@ -10,8 +10,9 @@ Each bot is a standalone Node.js program in its own folder, with its own depende
 | --- | --- | --- |
 | **Modmail** | Turns member DMs into staff-managed support threads, with transcripts and snippets. | [`modmail/`](modmail) |
 | **DiscMeet** | Records a Discord voice channel, transcribes it with OpenAI Whisper, and posts structured meeting notes. Also tracks expenses. | [`discmeet/`](discmeet) |
+| **Music Bot** | Plays music from YouTube, Spotify, SoundCloud, Bandcamp, Twitch and 1800+ other sites, with button controls, filters, saved playlists and live synced lyrics. | [`music bot/`](music%20bot) |
 
-Both are version `1.0.0`, written in JavaScript on [discord.js](https://discord.js.org) v14, and need Node.js 18 or newer.
+All are written in JavaScript on [discord.js](https://discord.js.org) v14 and need Node.js 22.12 or newer. Modmail and DiscMeet are version `1.0.2`; Music Bot is `1.0.0` and also needs Python 3.10+ (it installs yt-dlp itself).
 
 ## Layout
 
@@ -25,20 +26,25 @@ discmeet/             DiscMeet bot
   src/                commands, voice recording, transcription, summaries
   .env.example
   README.md
+music bot/            Music Bot
+  src/                player, sources (yt-dlp, Spotify), lyrics, UI
+  .env.example, config.json
+  Dockerfile, docker-compose.yml
+  README.md, SETUP.txt, docs/PLATFORMS.md
 ```
 
 ## Running a bot
 
-Pick a folder and follow its README. The steps are the same shape for both:
+Pick a folder and follow its SETUP.txt (step by step) or README. The steps are the same shape for every bot:
 
 ```bash
-cd modmail                # or discmeet
+cd modmail                # or discmeet, or "music bot" (quotes: the name has a space)
 cp .env.example .env      # fill in the values
 npm ci
 npm start
 ```
 
-DiscMeet additionally needs `npm run deploy` once to register its slash commands. Modmail registers its commands itself when it starts.
+DiscMeet additionally needs `npm run deploy` once to register its slash commands. Modmail and Music Bot register their commands themselves when they start.
 
 ## Configuration and secrets
 
@@ -48,10 +54,11 @@ Every variable a bot reads is listed in that bot's `.env.example`, with a commen
 
 - **Modmail** talks only to Discord.
 - **DiscMeet** sends recorded audio and transcripts to OpenAI for transcription and summaries. OpenAI usage is billed to your own API key.
+- **Music Bot** streams from the sites people link (via yt-dlp), reads Spotify metadata, and fetches lyrics from LRCLIB (free, no key). Musixmatch, Genius and the Spotify API are optional and only used if you add their keys. No paid service is required.
 
 ## Licence
 
-No LICENSE file is present in either bot's source. DiscMeet's `package.json` declares MIT, Modmail declares nothing. Until a licence file is added, treat the code as all rights reserved by the author: you may read and run it, but ask before redistributing or modifying it.
+Every bot is licensed **GPL-3.0-only**. The full text is in each bot's `LICENSE` file, and each `package.json` declares it. Please keep the LuniVex credit headers and startup credit line when you copy or modify a bot.
 
 ## Known quirks
 

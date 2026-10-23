@@ -1,0 +1,40 @@
+{
+  "defaultVolume": 80,
+  "maxVolume": 150,
+  "maxQueueSize": 500,
+  "maxPlaylistItems": 200,
+  "allowedTextChannels": [],
+  "allowedVoiceChannels": [],
+  "djRoleId": null,
+  "leaveWhenEmptyAfterSec": 120,
+  "leaveWhenIdleAfterSec": 300,
+  "nowPlayingUpdateSec": 15,
+  "searchResults": 5,
+  "rateLimit": {
+    "lookupsPerUser": 6,
+    "perSeconds": 30,
+    "maxConcurrentExtractions": 4
+  },
+  "ytdlp": {
+    "playerClients": "default",
+    "fallbackPlayerClients": "web_embedded,web_safari,android_vr",
+    "updateChannel": "nightly",
+    "autoUpdate": true,
+    "extractTimeoutSec": 45,
+    "searchProvider": "ytsearch",
+    "fallbackSearchProvider": "scsearch"
+  },
+  "lyrics": {
+    "providers": [
+      "lrclib",
+      "musixmatch",
+      "genius"
+    ],
+    "requestTimeoutMs": 4000,
+    "totalTimeoutMs": 12000,
+    "cacheTtlDays": 30,
+    "missTtlHours": 12,
+    "liveMinEditMs": 1500,
+    "lookaheadMs": 400
+  }
+}

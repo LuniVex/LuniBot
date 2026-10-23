@@ -1,0 +1,13 @@
+.env
+.env.*
+secrets/
+*cookies*.txt
+data/
+bin/
+.venv-ytdlp/
+node_modules/
+.git/
+test/
+scripts/
+*.md
+!README.md
