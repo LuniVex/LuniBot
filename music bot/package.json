@@ -1,6 +1,6 @@
 {
   "name": "music-bot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Discord music bot: yt-dlp + @discordjs/voice + FFmpeg, with synced live lyrics",
   "author": "LuniVex",

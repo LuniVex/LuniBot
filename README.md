@@ -12,7 +12,7 @@ Each bot is a standalone Node.js program in its own folder, with its own depende
 | **DiscMeet** | Records a Discord voice channel, transcribes it with OpenAI Whisper, and posts structured meeting notes. Also tracks expenses. | [`discmeet/`](discmeet) |
 | **Music Bot** | Plays music from YouTube, Spotify, SoundCloud, Bandcamp, Twitch and 1800+ other sites, with button controls, filters, saved playlists and live synced lyrics. | [`music bot/`](music%20bot) |
 
-All are written in JavaScript on [discord.js](https://discord.js.org) v14 and need Node.js 22.12 or newer. Modmail and DiscMeet are version `1.0.2`; Music Bot is `1.0.0` and also needs Python 3.10+ (it installs yt-dlp itself).
+All are written in JavaScript on [discord.js](https://discord.js.org) v14 and need Node.js 22.12 or newer. Modmail and DiscMeet are version `1.0.2`; Music Bot is `1.0.1` and also needs Python 3.10+ (it installs yt-dlp itself).
 
 ## Layout
 
