@@ -81,7 +81,8 @@ export async function playRequest({ manager, guild, member, textChannelId, query
     manager, guild, voiceChannel, textChannelId, tracks: result.tracks, playlist: result.playlist, next,
   });
   if (lyrics) manager.get(guild.id)?.setLyricsLive(true, member.id);
-  return { content: lyrics ? `${content}\n🎤 Live lyrics are on.` : content };
+  const extras = [result.note && `🔁 ${result.note}`, lyrics && '🎤 Live lyrics are on.'].filter(Boolean);
+  return { content: [content, ...extras].join('\n') };
 }
 
 /** Rebuild playable tracks from a saved playlist. */

@@ -19,6 +19,8 @@ export const binaries = {
   ytdlp: null,
   ytdlpVersion: null,
   ffmpeg: null,
+  /** False when ffmpeg can't open network URLs itself; streams are then piped through yt-dlp. */
+  ffmpegNetwork: true,
   jsRuntime: null,
   cookiesFile: null,
 };
@@ -46,28 +48,73 @@ async function findOnPath(name) {
 /** Run a short-lived command and capture its output (used for --version / -U only). */
 export function runCommand(file, args, { timeoutMs = 60_000 } = {}) {
   return new Promise((resolve) => {
-    const child = spawn(file, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let child;
+    try {
+      child = spawn(file, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (error) {
+      // Some failures (e.g. a corrupt binary) throw synchronously instead of emitting 'error'.
+      resolve({ code: -1, signal: null, stdout: '', stderr: String(error) });
+      return;
+    }
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => { stdout += d; });
     child.stderr.on('data', (d) => { stderr += d; });
     const timer = setTimeout(() => child.kill('SIGKILL'), timeoutMs);
-    child.on('error', (error) => { clearTimeout(timer); resolve({ code: -1, stdout, stderr: String(error) }); });
-    child.on('close', (code) => { clearTimeout(timer); resolve({ code, stdout, stderr }); });
+    child.on('error', (error) => { clearTimeout(timer); resolve({ code: -1, signal: null, stdout, stderr: String(error) }); });
+    child.on('close', (code, signal) => { clearTimeout(timer); resolve({ code, signal, stdout, stderr }); });
   });
 }
 
-async function locateFfmpeg() {
-  if (config.ffmpegPath) return config.ffmpegPath;
+/**
+ * Check that an ffmpeg binary actually runs and can encode Opus. A file can exist and be
+ * executable yet crash on start (e.g. a truncated download), which otherwise only shows up
+ * later as streams dying instantly with no error output.
+ */
+async function ffmpegWorks(file) {
+  const res = await runCommand(file, ['-hide_banner', '-encoders'], { timeoutMs: 20_000 });
+  if (res.code === 0 && /libopus/.test(res.stdout)) return { ok: true };
+  const reason = res.signal ? `killed by ${res.signal}` : res.code === 0 ? 'no libopus encoder' : `exit code ${res.code}`;
+  return { ok: false, reason, stderr: res.stderr.slice(-300) };
+}
+
+/**
+ * Fully static Linux builds (the ffmpeg-static package) can't resolve hostnames and
+ * segfault on any http(s) URL. Probe with a name that can never exist: a working ffmpeg
+ * fails normally, a broken one is killed by a signal.
+ */
+async function ffmpegCanResolve(file) {
+  const res = await runCommand(file, ['-hide_banner', '-loglevel', 'error', '-i', 'http://ffmpeg-dns-check.invalid/'], { timeoutMs: 15_000 });
+  return !res.signal;
+}
+
+async function ffmpegCandidates() {
+  const list = [];
+  if (config.ffmpegPath) list.push(config.ffmpegPath);
   const onPath = await findOnPath('ffmpeg');
-  if (onPath) return onPath;
+  if (onPath) list.push(onPath);
   try {
     const mod = await import('ffmpeg-static');
-    if (mod.default && await isExecutable(mod.default)) return mod.default;
+    if (mod.default && await isExecutable(mod.default)) list.push(mod.default);
   } catch {
     // optional dependency not installed
   }
-  return null;
+  return [...new Set(list)];
+}
+
+async function locateFfmpeg() {
+  let fallback = null;
+  for (const file of await ffmpegCandidates()) {
+    const check = await ffmpegWorks(file);
+    if (!check.ok) {
+      log.error({ ffmpeg: file, reason: check.reason, stderr: check.stderr }, 'ffmpeg candidate does not work, trying the next one');
+      continue;
+    }
+    if (await ffmpegCanResolve(file)) return { file, network: true };
+    log.warn({ ffmpeg: file }, 'ffmpeg crashes on network URLs (static build without DNS); looking for a better one');
+    fallback ??= { file, network: false };
+  }
+  return fallback;
 }
 
 function ytdlpAsset() {
@@ -191,8 +238,11 @@ function pickJsRuntime() {
  * (a custom YTDLP_PATH is left alone — update it with its own package manager).
  */
 export async function prepareBinaries() {
-  binaries.ffmpeg = await locateFfmpeg();
-  if (!binaries.ffmpeg) throw new Error('ffmpeg not found. Install it, set FFMPEG_PATH, or `npm install ffmpeg-static`.');
+  const ffmpeg = await locateFfmpeg();
+  binaries.ffmpeg = ffmpeg?.file ?? null;
+  binaries.ffmpegNetwork = ffmpeg?.network ?? true;
+  if (ffmpeg && !ffmpeg.network) log.warn('streams will be downloaded by yt-dlp and piped into ffmpeg (seeking is slower)');
+  if (!binaries.ffmpeg) throw new Error('No working ffmpeg with libopus found (see errors above). Install it, set FFMPEG_PATH, or reinstall ffmpeg-static.');
 
   const yt = await locateYtdlp();
   if (!yt) throw new Error('yt-dlp not found and could not be downloaded. Install it or set YTDLP_PATH.');

@@ -49,6 +49,7 @@ const file = loadFileConfig();
 const fileYt = file.ytdlp ?? {};
 const fileRate = file.rateLimit ?? {};
 const fileLyrics = file.lyrics ?? {};
+const fileSearch = file.search ?? {};
 
 export const config = Object.freeze({
   discordToken: env.DISCORD_TOKEN ?? '',
@@ -93,11 +94,15 @@ export const config = Object.freeze({
     updateChannel: env.YTDLP_UPDATE_CHANNEL || fileYt.updateChannel || 'nightly',
     autoUpdate: bool(env.YTDLP_AUTO_UPDATE, fileYt.autoUpdate ?? true),
     extractTimeoutMs: (fileYt.extractTimeoutSec ?? 45) * 1000,
-    searchProvider: fileYt.searchProvider || 'ytsearch',
-    fallbackSearchProvider: fileYt.fallbackSearchProvider || 'scsearch',
   },
 
   ffmpegPath: env.FFMPEG_PATH || null,
+
+  search: {
+    // Tried in order for typed searches, Spotify matching and replacing blocked songs.
+    providers: list(env.SEARCH_PROVIDERS) ?? fileSearch.providers ?? ['youtube', 'soundcloud', 'bandcamp', 'audius', 'mixcloud', 'archive'],
+    blockMinutes: fileSearch.blockMinutes ?? 30,
+  },
 
   lyrics: {
     providers: list(env.LYRICS_PROVIDERS) ?? fileLyrics.providers ?? ['lrclib', 'musixmatch', 'genius'],

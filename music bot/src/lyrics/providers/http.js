@@ -18,11 +18,18 @@ export function makeHttp(name, { capacity, perSeconds }) {
   const limiter = new RateLimiter({ capacity, perSeconds });
   let cooldownUntil = 0;
 
-  return async function request(url, { headers = {}, as = 'json' } = {}) {
+  return async function request(url, { headers = {}, as = 'json', method = 'GET', json } = {}) {
     if (Date.now() < cooldownUntil) throw new ProviderSkip(`${name} is cooling down after a rate limit`);
     if (limiter.take('all')) throw new ProviderSkip(`${name} local rate limit reached`);
     const res = await fetch(url, {
-      headers: { 'User-Agent': config.lyrics.userAgent, Accept: as === 'json' ? 'application/json' : 'text/html', ...headers },
+      method,
+      body: json === undefined ? undefined : JSON.stringify(json),
+      headers: {
+        'User-Agent': config.lyrics.userAgent,
+        Accept: as === 'json' ? 'application/json' : 'text/html',
+        ...(json === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...headers,
+      },
       signal: AbortSignal.timeout(config.lyrics.requestTimeoutMs),
       redirect: 'follow',
     });

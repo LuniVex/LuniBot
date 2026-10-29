@@ -15,14 +15,23 @@
     "perSeconds": 30,
     "maxConcurrentExtractions": 4
   },
+  "search": {
+    "providers": [
+      "youtube",
+      "soundcloud",
+      "bandcamp",
+      "audius",
+      "mixcloud",
+      "archive"
+    ],
+    "blockMinutes": 30
+  },
   "ytdlp": {
     "playerClients": "default",
     "fallbackPlayerClients": "web_embedded,web_safari,android_vr",
     "updateChannel": "nightly",
     "autoUpdate": true,
-    "extractTimeoutSec": 45,
-    "searchProvider": "ytsearch",
-    "fallbackSearchProvider": "scsearch"
+    "extractTimeoutSec": 45
   },
   "lyrics": {
     "providers": [

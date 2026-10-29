@@ -6,8 +6,7 @@
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { UserError } from '../util/errors.js';
-import { coverage, normalize } from '../util/text.js';
-import { search } from './ytdlp.js';
+import { findOnProviders } from './search.js';
 
 const log = logger.child({ mod: 'spotify' });
 const API = 'https://api.spotify.com/v1';
@@ -203,58 +202,12 @@ export async function resolveSpotify(input, { max = config.maxPlaylistItems } = 
 
 // ---------------------------------------------------------------- Matching on a real source
 
-const NOISE = ['live', 'cover', 'karaoke', 'instrumental', 'remix', 'sped up', 'slowed', 'nightcore', '8d', 'reverb', 'acoustic', 'reaction', 'lyrics video'];
-
-/** Score a search hit against Spotify metadata; higher is better, < 0.45 is treated as no match. */
-export function scoreCandidate(meta, entry) {
-  const title = entry.title ?? '';
-  const channel = entry.channel ?? entry.uploader ?? '';
-  const haystack = `${title} ${channel}`;
-  const primaryArtist = (meta.artist ?? '').split(',')[0];
-
-  let score = 0.55 * coverage(meta.title, title) + 0.3 * coverage(primaryArtist, haystack);
-
-  if (meta.durationSec && entry.duration) {
-    const diff = Math.abs(meta.durationSec - entry.duration);
-    if (diff <= 3) score += 0.2;
-    else if (diff <= 10) score += 0.1;
-    else if (diff > 30) score -= 0.35;
-  }
-  // YouTube "Artist - Topic" channels carry the official studio audio.
-  if (/ - topic$/i.test(channel)) score += 0.15;
-  if (/official (audio|music video|video)/i.test(title)) score += 0.05;
-
-  const metaNorm = normalize(meta.title);
-  const titleNorm = normalize(title);
-  for (const word of NOISE) {
-    if (titleNorm.includes(word) && !metaNorm.includes(word)) score -= 0.25;
-  }
-  return score;
-}
+export { scoreCandidate } from './search.js';
 
 /**
- * Find the best playable match for a Spotify track. Tries the primary search provider,
- * then the fallback (SoundCloud by default). Returns null when nothing is close enough.
+ * Find a playable copy of a Spotify track on the first search provider that has it
+ * (YouTube, SoundCloud, Bandcamp, … in configured order). Null when nothing is close enough.
  */
-export async function matchTrack(meta) {
-  const query = `${(meta.artist ?? '').split(',')[0]} - ${meta.title}`.trim();
-  const providers = [config.ytdlp.searchProvider, config.ytdlp.fallbackSearchProvider].filter(Boolean);
-  let lastError = null;
-  for (const provider of providers) {
-    let entries;
-    try {
-      entries = await search(query, { limit: 5, provider });
-    } catch (err) {
-      lastError = err;
-      continue;
-    }
-    const ranked = entries
-      .filter((e) => e.url && e.live_status !== 'is_live')
-      .map((e) => ({ e, score: scoreCandidate(meta, e) }))
-      .sort((a, b) => b.score - a.score);
-    log.debug({ query, provider, top: ranked.slice(0, 3).map((r) => [r.e.title, r.score.toFixed(2)]) }, 'spotify match candidates');
-    if (ranked[0] && ranked[0].score >= 0.45) return { entry: ranked[0].e, provider };
-  }
-  if (lastError) throw lastError;
-  return null;
+export function matchTrack(meta) {
+  return findOnProviders(meta);
 }

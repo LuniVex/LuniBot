@@ -214,3 +214,31 @@ describe('store', () => {
     s.close();
   });
 });
+
+describe('search providers', async () => {
+  const S = await import('../src/sources/search.js');
+  it('maps URLs to providers', () => {
+    assert.equal(S.providerIdForUrl('https://www.youtube.com/watch?v=x'), 'youtube');
+    assert.equal(S.providerIdForUrl('https://youtu.be/x'), 'youtube');
+    assert.equal(S.providerIdForUrl('https://music.youtube.com/watch?v=x'), 'youtube');
+    assert.equal(S.providerIdForUrl('https://bonobomusic.bandcamp.com/track/kerala'), 'bandcamp');
+    assert.equal(S.providerIdForUrl('https://audius.co/a/b'), 'audius');
+    assert.equal(S.providerIdForUrl('https://archive.org/details/x'), 'archive');
+    assert.equal(S.providerIdForUrl('https://notyoutube.com/x'), null);
+  });
+  it('parses each public search API', () => {
+    assert.deepEqual(S.parseBandcamp({ auto: { results: [{ type: 't', name: 'Kerala', band_name: 'Bonobo', item_url_path: 'https://b.bandcamp.com/track/k' }, { type: 'a', name: 'Album' }] } }),
+      [{ url: 'https://b.bandcamp.com/track/k', title: 'Kerala', channel: 'Bonobo', duration: null }]);
+    assert.equal(S.parseAudius({ data: [{ permalink: '/a/b', title: 'T', user: { name: 'U' }, duration: 9 }] })[0].url, 'https://audius.co/a/b');
+    assert.equal(S.parseMixcloud({ data: [{ url: 'https://www.mixcloud.com/u/m/', name: 'M', user: { name: 'U' }, audio_length: 60 }] })[0].duration, 60);
+    assert.equal(S.parseArchive({ response: { docs: [{ identifier: 'id', title: 'T', creator: ['C', 'D'] }] } })[0].channel, 'C');
+  });
+  it('takes blocked providers out of rotation', () => {
+    S.clearBlocked();
+    assert.equal(S.isBlocked('youtube'), false);
+    S.markBlocked('youtube', 'YT_BOT_CHECK');
+    assert.equal(S.isBlocked('youtube'), true);
+    assert.ok(S.searchStatus().find((p) => p.id === 'youtube').blockedMinutes > 0);
+    S.clearBlocked();
+  });
+});

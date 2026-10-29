@@ -16,7 +16,8 @@ Anything **yt-dlp** can extract can be played: [1800+ sites](https://github.com/
 | **Twitch** | live channels, VODs, clips | ✅ live channel verified (audio-only HLS) | An offline channel gets "isn't live right now". Subscriber-only VODs need cookies. Ads in the stream are heard as audio |
 | **archive.org** | items and collections | ✅ verified (audio item streamed through yt-dlp; 487-item collection capped at 200) | Uses cookie-bound URLs, so it streams through yt-dlp → FFmpeg (still never written to disk). Video items without an audio track are reported as "no audio track" |
 | **Vimeo** | — | ❌ fails without login (2026-10-23) | Vimeo now refuses anonymous extraction ("web client only works when logged-in"). Adding Vimeo cookies to `YTDLP_COOKIES_FILE` should make it work (not tested) |
-| **Mixcloud** | shows | ⚠️ not verified | Supported by yt-dlp; the test link used was dead |
+| **Mixcloud** | shows, DJ mixes | ✅ verified (search + playback) | Mostly long DJ mixes rather than single songs |
+| **Audius** | tracks | ✅ verified (search + playback) | Independent artists; streams are piped through yt-dlp |
 | **Apple Music, Deezer, Tidal, Amazon Music** | — | ❌ not supported | DRM-only, and unlike Spotify there is no free metadata path. Search by song name instead |
 | **Anything else** | any yt-dlp-supported URL | depends on the site | Login-walled sites need cookies; DRM sites can't play. Unsupported links get a clear message with a link to the supported-sites list |
 
@@ -43,6 +44,9 @@ Spotify can't be streamed: its audio is DRM-protected. The bot reads the metadat
 
 ## Search
 
-- Plain text searches YouTube (`ytsearch`). If that is blocked, it searches SoundCloud (`scsearch`) instead. Both providers are configurable in `config.json`.
+- Typed searches go through every music site that can be both searched and streamed for free, in this order: **YouTube → SoundCloud → Bandcamp → Audius → Mixcloud → Internet Archive**. The first site whose results actually contain your words wins. Covers, karaoke and sped-up versions rank below the original unless you ask for them. Change the order or drop a site with `search.providers` in `config.json` or `SEARCH_PROVIDERS` in `.env`.
+- YouTube and SoundCloud are searched through yt-dlp. Bandcamp, Audius, Mixcloud and the Internet Archive are searched through their free public search APIs, with no keys needed; the Bandcamp one is the endpoint behind bandcamp.com's own search box and isn't documented. Playback always goes through yt-dlp.
+- **When a site refuses a song** (YouTube's bot check, DRM, region lock, a deleted video), the bot looks up the same song (artist + title + duration) on the next site and plays that instead of skipping. You get one notice, e.g. "Couldn't play X from YouTube or SoundCloud, so it's playing from Bandcamp instead". If a whole site refuses this server (bot check, rate limit), it's skipped for 30 minutes (`search.blockMinutes`). `/settings view` shows the order and anything currently skipped. Spotify songs and blocked YouTube links go through the same chain.
+- **Limits:** Bilibili and Niconico are left out because their search refuses automated requests or needs an account. Spotify, Apple Music, Deezer and Tidal are DRM-only, so they're used for song details, never audio. Major-label songs are often DRM-locked on SoundCloud too, so without YouTube a mainstream song can end up as a re-upload or a cover from Bandcamp or Audius.
 - A clear match plays immediately. If the top result doesn't contain the query, or a short query matches several different songs (e.g. "hello"), the requester gets a picker. Use `/play … choose:true` to always get one.
 - Autocomplete suggests your recently played tracks when the box is empty, and YouTube search suggestions as you type.

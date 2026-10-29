@@ -71,6 +71,14 @@ export function createStream({ streamInfo, pageUrl, seekSec = 0, volume = 100, f
   const args = buildFfmpegArgs({ streamInfo, seekSec, volume, filters, isLive, piped });
   const ff = trackChild(spawn(binaries.ffmpeg, args, { stdio: [piped ? 'pipe' : 'ignore', 'pipe', 'pipe'] }));
 
+  let stderr = '';
+  let sourceStderr = '';
+  let bytesOut = 0;
+  // Without a listener a failed launch (ENOENT/EACCES) would throw and take the bot down.
+  ff.on('error', (err) => {
+    stderr += `\nffmpeg failed to start: ${err.message}`;
+  });
+
   let source = null;
   if (piped) {
     source = spawnPipe(pageUrl);
@@ -78,14 +86,22 @@ export function createStream({ streamInfo, pageUrl, seekSec = 0, volume = 100, f
     // ffmpeg closing early (skip/stop) turns into EPIPE on our side; that's expected.
     ff.stdin.on('error', () => {});
     source.stdout.on('error', () => {});
-    source.stderr.resume();
+    source.on('error', (err) => {
+      sourceStderr += `\nyt-dlp failed to start: ${err.message}`;
+    });
+    // Keep yt-dlp's own errors: when it fails (e.g. YouTube's bot check) ffmpeg just sees EOF.
+    source.stderr.on('data', (d) => {
+      sourceStderr = (sourceStderr + d).slice(-4000);
+    });
   }
 
-  let stderr = '';
   ff.stderr.on('data', (d) => {
     stderr = (stderr + d).slice(-4000);
   });
   ff.stdout.on('error', () => {});
+  ff.stdout.on('data', (d) => {
+    bytesOut += d.length;
+  });
 
   const exited = new Promise((resolve) => ff.once('close', (code, signal) => resolve({ code, signal })));
   const resource = createAudioResource(ff.stdout, { inputType: StreamType.OggOpus, metadata });
@@ -99,7 +115,10 @@ export function createStream({ streamInfo, pageUrl, seekSec = 0, volume = 100, f
     get killed() {
       return killed;
     },
+    piped,
     stderr: () => stderr,
+    sourceStderr: () => sourceStderr,
+    bytesOut: () => bytesOut,
     /** Current position in the source's own timeline, in seconds. */
     position() {
       return seekSec + (resource.playbackDuration / 1000) * this.speed;

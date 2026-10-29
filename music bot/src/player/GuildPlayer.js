@@ -15,8 +15,9 @@ import {
 import { config } from '../config.js';
 import { logger } from '../logger.js';
 import { getLyricsForTrack } from '../lyrics/service.js';
-import { ensurePlayable } from '../sources/resolver.js';
-import { getStreamInfo } from '../sources/ytdlp.js';
+import { ensurePlayable, findReplacement, spotifyBadgeFor } from '../sources/resolver.js';
+import { isBlocked, markBlocked, providerIdForUrl, providerName } from '../sources/search.js';
+import { getStreamInfo, mapYtdlpError } from '../sources/ytdlp.js';
 import { toUserError, UserError } from '../util/errors.js';
 import { escapeMd, truncate } from '../util/format.js';
 import { createStream, describeStreamFailure, FILTERS, isNoAudio } from './stream.js';
@@ -51,6 +52,11 @@ const MAX_FAIL_STREAK = 5;
 const MAX_STREAM_RETRIES = 2;
 const MAX_RECONNECTS = 5;
 const HISTORY_SIZE = 50;
+/** Load failures worth trying the same song on another provider for. */
+const FALLBACK_CODES = new Set(['PROVIDER_BLOCKED', 'YT_BOT_CHECK', 'RATE_LIMITED', 'JS_CHALLENGE', 'GEO', 'AGE_RESTRICTED',
+  'MEMBERS_ONLY', 'PRIVATE', 'DRM', 'NO_FORMATS', 'UNAVAILABLE', 'EXTRACT_FAILED', 'NETWORK', 'TIMEOUT']);
+/** Failures that mean the whole provider is refusing this server, not just one song. */
+const BLOCKING_CODES = new Set(['YT_BOT_CHECK', 'RATE_LIMITED', 'JS_CHALLENGE']);
 
 export class GuildPlayer {
   queue = [];
@@ -91,7 +97,9 @@ export class GuildPlayer {
     this.manager = manager;
     this.log = logger.child({ guild: guildId });
     this.volume = manager.store.getSettings(guildId).volume;
-    this.audio = createAudioPlayer({ behaviors: { noSubscriber: NoSubscriberBehavior.Pause } });
+    // The default (5 missed 20ms frames) ends a track on any >100ms network hiccup; wait up
+    // to 5s of silence for the source to catch up instead.
+    this.audio = createAudioPlayer({ behaviors: { noSubscriber: NoSubscriberBehavior.Pause, maxMissedFrames: Math.round(5_000 / 20) } });
     this.audio.on('stateChange', (oldState, newState) => this.#onAudioState(oldState, newState));
     this.audio.on('error', (err) => this.log.warn({ err: err.message }, 'audio resource error'));
   }
@@ -273,6 +281,10 @@ export class GuildPlayer {
       if (this.state === S.LOADING) {
         this.#transition(S.PLAYING, 'audio started');
         this.#failStreak = 0;
+        if (this.current?.fallbackNotice) {
+          void this.announce(this.current.fallbackNotice);
+          this.current.fallbackNotice = null;
+        }
         this.refreshNowPlaying();
         this.#prefetchNext();
       }
@@ -298,15 +310,30 @@ export class GuildPlayer {
       || (!track.isLive && track.durationSec && position < track.durationSec - 5);
 
     if (endedEarly && this.state === S.RECONNECTING) return; // #leaveReconnecting restarts it
-    if (endedEarly && this.#streamRetries < MAX_STREAM_RETRIES && !isNoAudio(handle.stderr())) {
+    const diagnostics = {
+      position,
+      code: exit.code,
+      signal: exit.signal ?? null,
+      bytesOut: handle.bytesOut(),
+      piped: handle.piped,
+      protocol: track.stream?.protocol ?? null,
+      stderr: handle.stderr().slice(-300),
+      ytdlpStderr: handle.sourceStderr().slice(-300) || undefined,
+    };
+    // In pipe mode a yt-dlp failure (bot check, 403, …) is the real reason; retrying won't help.
+    const sourceError = handle.piped && /ERROR:/.test(handle.sourceStderr()) ? mapYtdlpError(handle.sourceStderr()) : null;
+    if (endedEarly && !sourceError && this.#streamRetries < MAX_STREAM_RETRIES && !isNoAudio(handle.stderr())) {
       this.#streamRetries++;
-      this.log.warn({ position, code: exit.code, stderr: handle.stderr().slice(-300), retry: this.#streamRetries }, 'stream ended early, resuming');
+      this.log.warn({ ...diagnostics, retry: this.#streamRetries }, 'stream ended early, resuming');
       // First retry reuses the (usually still valid) URL; the second re-resolves it.
       void this.#start(track, Math.max(0, position - 1), { fresh: this.#streamRetries > 1, announce: false });
       return;
     }
+    if (endedEarly && sourceError && await this.#tryFallback(track, sourceError, token)) return;
     if (endedEarly) {
-      this.announce(`⚠️ Skipped **${escapeMd(truncate(track.title, 80))}**: ${describeStreamFailure(handle.stderr())}.`);
+      this.log.warn(diagnostics, 'stream failed, skipping track');
+      const reason = sourceError ? `${sourceError.message}${sourceError.hint ? `\n💡 ${sourceError.hint}` : ''}` : `${describeStreamFailure(handle.stderr())}.`;
+      this.announce(`⚠️ Skipped **${escapeMd(truncate(track.title, 80))}**: ${reason}`);
     }
     void this.advance();
   }
@@ -328,6 +355,7 @@ export class GuildPlayer {
     ensurePlayable(next)
       .then(() => {
         if (this.lyricsLive.enabled) this.#loadLyrics(next);
+        if (isBlocked(providerIdForUrl(next.url))) return null; // swapped to another provider at play time
         return this.#getStreamInfo(next);
       })
       .catch((err) => this.log.debug({ err: err.message }, 'prefetch failed (will retry at play time)'))
@@ -357,9 +385,17 @@ export class GuildPlayer {
 
     try {
       await ensurePlayable(track);
+      const providerId = providerIdForUrl(track.url);
+      if (providerId && isBlocked(providerId)) {
+        throw new UserError(`${providerName(providerId)} is blocking the bot right now.`, {
+          hint: 'Try a link from another site. Bot owner: see SETUP.txt for YouTube cookies.',
+          code: 'PROVIDER_BLOCKED',
+        });
+      }
       if (this.lyricsLive.enabled) this.#loadLyrics(track);
       const streamInfo = await this.#getStreamInfo(track, fresh);
-      const gate = streamInfo.availableAt - Date.now();
+      // Piped streams are fetched by yt-dlp, which waits for YouTube's gate on its own.
+      const gate = streamInfo.needsPipe ? 0 : streamInfo.availableAt - Date.now();
       if (gate > 0) await sleep(Math.min(gate + 250, 30_000));
       if (token !== this.#loadToken) return;
       const handle = createStream({
@@ -397,10 +433,15 @@ export class GuildPlayer {
         this.stream = previous;
         throw err;
       }
-      this.#failStreak++;
       const ue = toUserError(err, 'Could not play that track.');
+      if (await this.#tryFallback(track, ue, token)) return;
+      this.#failStreak++;
       this.log.warn({ code: ue.code, err: err.message, url: track.url, title: track.title }, 'track failed to load');
-      this.announce(`⚠️ Skipped **${escapeMd(truncate(track.title, 80))}** — ${ue.message}${ue.hint ? `\n💡 ${ue.hint}` : ''}`);
+      // After a fallback search, the generic hint ("search by name…") no longer applies.
+      const hint = track.fallbackTried
+        ? `No other site the bot can use has a playable copy${isBlocked('youtube') ? ' (YouTube is blocking this server)' : ''}.`
+        : ue.hint;
+      this.announce(`⚠️ Skipped **${escapeMd(truncate(track.title, 80))}** — ${ue.message}${hint ? `\n💡 ${hint}` : ''}`);
       if (this.#failStreak >= MAX_FAIL_STREAK) {
         this.queue = [];
         this.current = null;
@@ -412,6 +453,45 @@ export class GuildPlayer {
       this.current = null;
       await this.advance();
     }
+  }
+
+  /**
+   * A provider refused this song: find the same song on the next provider (YouTube →
+   * SoundCloud → Bandcamp → …) and play that instead of skipping. Provider-wide refusals
+   * (bot check, rate limit) also take the provider out of rotation for a while.
+   * Returns true when the failure was handled.
+   */
+  async #tryFallback(track, error, token) {
+    if (!FALLBACK_CODES.has(error.code) || !track.url) return false;
+    const from = providerIdForUrl(track.url);
+    track.triedProviders ??= new Set();
+    track.triedUrls ??= new Set();
+    track.failedOn ??= new Set();
+    if (from) track.failedOn.add(from);
+    if (from && (BLOCKING_CODES.has(error.code) || error.code === 'PROVIDER_BLOCKED')) {
+      // The whole site refuses this server: skip it for this song and for a while for everyone.
+      if (error.code !== 'PROVIDER_BLOCKED') markBlocked(from, error.code);
+      track.triedProviders.add(from);
+    } else {
+      // Only this upload is unplayable (DRM, deleted, region lock): other uploads of the
+      // same song on the same site are still worth trying.
+      track.triedUrls.add(track.url);
+    }
+    track.fallbackTried = true;
+    const found = await findReplacement(track, { exclude: track.triedProviders, skipUrls: track.triedUrls });
+    if (token !== this.#loadToken) return true; // the user moved on meanwhile
+    if (!found) return false;
+    this.log.info({ from, to: found.provider, title: track.title, code: error.code }, 'playing from another provider');
+    track.url = found.track.url;
+    track.stream = null;
+    track.source = track.spotify ? spotifyBadgeFor(found.track.source) : found.track.source;
+    track.durationSec = found.track.durationSec ?? track.durationSec;
+    // Announced once, when the replacement actually starts (a chain can hop several sites).
+    const failed = [...track.failedOn].map(providerName).join(', ').replace(/, ([^,]*)$/, ' or $1');
+    const where = found.provider && track.failedOn.has(found.provider) ? `another upload on **${found.track.source.name}**` : `**${found.track.source.name}**`;
+    track.fallbackNotice = `🔁 Couldn't play **${escapeMd(truncate(track.title, 80))}** from ${failed}, so it's playing from ${where} instead.`;
+    void this.#start(track, 0);
+    return true;
   }
 
   async #restartAtPosition() {

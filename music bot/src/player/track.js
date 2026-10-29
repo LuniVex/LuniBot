@@ -13,6 +13,8 @@ const BADGES = [
   { test: /twitch/i, name: 'Twitch', emoji: '🟪', color: 0x9146ff },
   { test: /vimeo/i, name: 'Vimeo', emoji: '🔷', color: 0x1ab7ea },
   { test: /mixcloud/i, name: 'Mixcloud', emoji: '🟫', color: 0x5000ff },
+  { test: /audius/i, name: 'Audius', emoji: '🟣', color: 0xcc0fe0 },
+  { test: /archive\.org|archiveorg/i, name: 'Internet Archive', emoji: '🏛️', color: 0x428bca },
   { test: /spotify/i, name: 'Spotify', emoji: '🟩', color: 0x1db954 },
 ];
 

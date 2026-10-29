@@ -1,0 +1,3 @@
+# Heroku: makes the Python buildpack install Python, which the bot uses to keep
+# yt-dlp up to date (it creates .venv-ytdlp at start). This copy is the fallback.
+yt-dlp[default,curl-cffi]

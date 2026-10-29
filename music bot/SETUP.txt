@@ -126,7 +126,13 @@ name has a space in it, so use quotes:
 
    NEVER commit .env. It is already listed in .gitignore.
 
-4. OPTIONAL — defaults for all servers live in config.json: default volume,
+4. OPTIONAL — search order. Typed searches try YouTube, SoundCloud, Bandcamp,
+   Audius, Mixcloud and the Internet Archive in that order (all free, no
+   keys). If one refuses a song (e.g. YouTube blocks your server), the same
+   song is played from the next one. Change the order with SEARCH_PROVIDERS
+   in .env, e.g.   SEARCH_PROVIDERS=soundcloud,bandcamp,audius,youtube
+
+5. OPTIONAL — defaults for all servers live in config.json: default volume,
    queue size limit, playlist import cap, allowed text/voice channels, DJ role,
    how long the bot waits before leaving an empty channel, and so on.
 

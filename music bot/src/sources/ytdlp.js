@@ -214,8 +214,8 @@ export async function extractInfo(url, { playlistEnd = config.maxPlaylistItems }
   return parseJson(stdout);
 }
 
-/** Search a provider (`ytsearch`, `scsearch`, ...) and return flat entries. */
-export async function search(query, { limit = config.searchResults, provider = config.ytdlp.searchProvider } = {}) {
+/** Search through a yt-dlp search prefix (`ytsearch`, `scsearch`, ...) and return flat entries. */
+export async function search(query, { limit = config.searchResults, provider = 'ytsearch' } = {}) {
   const target = `${provider}${limit}:${query}`;
   const { stdout } = await runYtdlp(['-J', '--flat-playlist', '--', target], { youtube: provider.startsWith('yt'), timeoutMs: 25_000 });
   return parseJson(stdout).entries ?? [];
@@ -235,8 +235,9 @@ export async function getStreamInfo(url) {
     url: fmt.url,
     protocol: fmt.protocol ?? info.protocol ?? 'https',
     headers: fmt.http_headers ?? info.http_headers ?? {},
-    // Cookie-bound or fragmented formats are piped through yt-dlp rather than fetched by ffmpeg.
-    needsPipe: Boolean(fmt.cookies || info.cookies) || !/^(https?|m3u8|m3u8_native)$/.test(fmt.protocol ?? ''),
+    // Cookie-bound or fragmented formats are piped through yt-dlp rather than fetched by ffmpeg,
+    // and so is everything when ffmpeg can't do networking itself.
+    needsPipe: !binaries.ffmpegNetwork || Boolean(fmt.cookies || info.cookies) || !/^(https?|m3u8|m3u8_native)$/.test(fmt.protocol ?? ''),
     // YouTube gates media URLs until the pre-roll ad would have finished (403 before that).
     availableAt: fmt.available_at ? fmt.available_at * 1000 : 0,
     resolvedAt: Date.now(),
@@ -245,6 +246,7 @@ export async function getStreamInfo(url) {
 
 /** Spawn yt-dlp writing the media to stdout (for formats ffmpeg can't fetch itself). */
 export function spawnPipe(url) {
-  const args = [...baseArgs(), '-f', AUDIO_FORMAT, '--no-playlist', '--no-part', '-o', '-', '--', url];
+  // yt-dlp's own HLS/DASH downloaders, so it never hands the download to ffmpeg either.
+  const args = [...baseArgs(), '-f', AUDIO_FORMAT, '--downloader', 'm3u8,dash:native', '--no-playlist', '--no-part', '-o', '-', '--', url];
   return track(spawn(binaries.ytdlp, args, { stdio: ['ignore', 'pipe', 'pipe'] }));
 }

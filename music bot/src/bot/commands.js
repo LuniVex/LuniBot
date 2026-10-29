@@ -19,6 +19,7 @@ import { escapeMd, truncate } from '../util/format.js';
 import { isUrl } from '../util/text.js';
 import { emptyQueueView, queueView } from '../ui/views.js';
 import { providerStatus } from '../lyrics/service.js';
+import { searchStatus } from '../sources/search.js';
 import { lyrics, lyricsCommand } from './lyrics.js';
 import { checkRate, enqueueResolved, playRequest, tracksFromSaved } from './play.js';
 import { checkTextChannel, requireVoice } from './permissions.js';
@@ -139,6 +140,10 @@ function settingsEmbed(s, ctx) {
       },
       { name: 'Queue limit', value: String(config.maxQueueSize), inline: true },
       { name: 'Playlist import cap', value: String(config.maxPlaylistItems), inline: true },
+      {
+        name: 'Search order',
+        value: searchStatus().map((p, i) => `${i + 1}. ${p.name}${p.blockedMinutes ? ` — ⛔ skipped for ${p.blockedMinutes} min (blocked this server)` : ''}`).join('\n'),
+      },
       {
         name: 'Lyrics providers (in order)',
         value: providerStatus().map((p) => `${p.enabled ? '✅' : '⛔'} ${p.name}${p.enabled ? '' : ' — no key set'}`).join('\n'),

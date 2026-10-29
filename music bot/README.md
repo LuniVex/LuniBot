@@ -16,7 +16,7 @@ See **[docs/PLATFORMS.md](docs/PLATFORMS.md)** for per-platform support and cave
 
 | Command | What it does |
 |---|---|
-| `/play query [next] [choose]` | Search text, a track, a playlist or album, or a live stream from any supported link. Has autocomplete. A clear match plays straight away; an ambiguous search shows a picker. |
+| `/play query [next] [choose]` | Search text, a track, a playlist or album, or a live stream from any supported link. Has autocomplete. A clear match plays straight away; an ambiguous search shows a picker. Searches go through YouTube → SoundCloud → Bandcamp → Audius → Mixcloud → Internet Archive, and a song a site refuses is played from the next one ([details](docs/PLATFORMS.md#search)). |
 | `/queue [page]` | The queue, paginated, with shuffle and clear buttons. Only you see it. |
 | `/settings view\|volume\|dj-role\|always-on\|music-channel` | Server settings. Requires **Manage Server**. |
 | `/playlist save\|load\|list\|delete` | Your personal saved playlists. They follow you across servers. |

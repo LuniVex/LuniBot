@@ -8,8 +8,10 @@ import { logger } from '../logger.js';
 import { createTrack, sourceFromInfo, trackFromInfo } from '../player/track.js';
 import { UserError } from '../util/errors.js';
 import { coverage, isUrl, tokens } from '../util/text.js';
+import { cleanTitle, metasForTrack } from '../lyrics/match.js';
+import { findOnProviders, markBlocked, providerIdForUrl, providerName, searchAll } from './search.js';
 import { isSpotifyInput, matchTrack, resolveSpotify } from './spotify.js';
-import { extractInfo, search } from './ytdlp.js';
+import { extractInfo } from './ytdlp.js';
 
 const log = logger.child({ mod: 'resolver' });
 const SPOTIFY_BADGE = sourceFromInfo({ url: 'spotify' });
@@ -75,29 +77,63 @@ export async function ensurePlayable(track) {
   return track;
 }
 
+/**
+ * Look for the same song on another provider, e.g. after YouTube refused to play it.
+ * `exclude` holds providers already tried for this track.
+ */
+export async function findReplacement(track, { exclude, skipUrls } = {}) {
+  const meta = metasForTrack(track)[0];
+  // Without an artist a title alone ("Intro", "Home") would match unrelated songs.
+  if (!meta?.artist) return null;
+  const match = await findOnProviders(
+    { title: cleanTitle(meta.title), artist: meta.artist, durationSec: track.durationSec },
+    { exclude, skipUrls },
+  ).catch(() => null);
+  return match ? { ...match, track: trackFromInfo(match.entry, track.requester) } : null;
+}
+
 async function resolveSearch(query, requester, { forcePicker }) {
-  let entries;
-  let provider = config.ytdlp.searchProvider;
-  try {
-    entries = await search(query, { provider });
-  } catch (err) {
-    const fallback = config.ytdlp.fallbackSearchProvider;
-    if (!fallback) throw err;
-    log.warn({ code: err.code, fallback }, 'primary search failed, using fallback provider');
-    provider = fallback;
-    entries = await search(query, { provider });
+  const found = await searchAll(query);
+  if (!found) {
+    throw new UserError(`No results for "${query}" on any music site.`, { hint: 'Check the spelling, or paste a direct link.', code: 'NO_RESULTS' });
   }
-  entries = entries.filter((e) => e.url && e.live_status !== 'is_upcoming');
-  if (entries.length === 0) {
-    throw new UserError(`No results for "${query}".`, { hint: 'Check the spelling, or paste a direct link.', code: 'NO_RESULTS' });
-  }
+  const { entries, provider } = found;
+  log.info({ query, provider }, 'search provider used');
   const tracks = entries.map((e) => trackFromInfo(e, requester));
   if (forcePicker || isAmbiguous(query, entries)) return { kind: 'choices', query, choices: tracks };
   return { kind: 'tracks', tracks: [tracks[0]], fromSearch: true };
 }
 
+/** Title and channel of a YouTube video via oEmbed, which still answers when playback is blocked. */
+async function youtubeOEmbed(url) {
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?${new URLSearchParams({ url, format: 'json' })}`, { signal: AbortSignal.timeout(5_000) });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
 async function resolveUrl(url, requester) {
-  const info = await extractInfo(url);
+  let info;
+  try {
+    info = await extractInfo(url);
+  } catch (err) {
+    // YouTube blocked this server: queue the video by its title; at play time the player
+    // finds the same song on another provider.
+    if (err.code === 'YT_BOT_CHECK' && providerIdForUrl(url) === 'youtube' && !/[?&]list=/.test(url)) {
+      const meta = await youtubeOEmbed(url);
+      if (meta?.title) {
+        markBlocked('youtube', err.code);
+        return {
+          kind: 'tracks',
+          tracks: [createTrack({ url, title: meta.title, artist: meta.author_name, thumbnail: meta.thumbnail_url, requester })],
+          note: `${providerName('youtube')} is blocking this server, so it will play from another site.`,
+        };
+      }
+    }
+    throw err;
+  }
   // yt-dlp normalises music.youtube.com to www.youtube.com; keep the YouTube Music badge.
   const badgeOverride = /music\.youtube\.com/i.test(url) ? sourceFromInfo({ url }) : null;
   if (info._type === 'playlist' || Array.isArray(info.entries)) {
